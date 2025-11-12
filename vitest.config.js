@@ -18,7 +18,9 @@ export default defineConfig({
     // 测试文件匹配模式
     include: [
       'tests/**/*.test.js',
-      'tests/**/*.spec.js'
+      'tests/**/*.spec.js',
+      'src/**/*.test.ts',
+      'src/**/*.test.tsx'
     ],
 
     // 排除文件
@@ -76,7 +78,7 @@ export default defineConfig({
   // 解析配置
   resolve: {
     alias: {
-      '@': '/js',
+      '@': '/src',
       '@core': '/js/core',
       '@managers': '/js/managers',
       '@utils': '/js/utils',

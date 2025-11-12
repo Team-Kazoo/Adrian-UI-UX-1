@@ -21,7 +21,7 @@ export interface AudioState {
 
 export type InstrumentType = 'saxophone' | 'violin' | 'piano' | 'flute' | 'guitar' | 'synth'
 
-export type AudioMode = 'continuous' | 'legacy'
+export type AudioMode = 'continuous' | 'traditional' | 'legacy'
 
 export interface AudioServiceControls {
   start: () => Promise<void>
