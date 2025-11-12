@@ -6,10 +6,19 @@
 
 ## 🔧 重要修复 (2025-11-12)
 
-**问题**: `window.app.getLatencyStats()` 一直返回 `{min: 0, max: 0, avg: 0, count: 0}`
-**原因**: `pitch-worklet.js` 的 `pitchInfo` 对象缺少 `captureTime` 字段
-**修复**: 已添加 `captureTime: currentTime * 1000` 到 PitchFrame (提交: d61e3c5)
-**影响**: 现在可以正常测量延迟了!请重新测试 T001 和 T019
+### 修复 #1: captureTime 缺失 (d61e3c5) ✅
+**问题**: `window.app.getLatencyStats()` 返回 `{count: 0}` (无数据)
+**原因**: `pitch-worklet.js` 的 `pitchInfo` 缺少 `captureTime` 字段
+**修复**: 添加 `captureTime: currentTime * 1000` 到 PitchFrame
+
+### 修复 #2: 时间源不一致 (9ac3995) ✅
+**问题**: 延迟显示 38,778ms (38秒!),应该是 ~180ms
+**原因**: 时间源不一致
+  - Worklet: `currentTime` (AudioContext 时间)
+  - Main: `performance.now()` (页面加载时间)
+**修复**: 主线程改用 `audioContext.currentTime * 1000` (main.js:279)
+
+**现在应该正常了!** 期望延迟: 100-200ms
 
 ---
 
