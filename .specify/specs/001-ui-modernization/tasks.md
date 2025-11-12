@@ -19,7 +19,7 @@
 
 **⚠️ CRITICAL**: Measure audio latency BEFORE making any changes (baseline for comparison)
 
-- [ ] T001 [US1] Measure baseline audio latency - ⚠️ **DEFERRED TO USER** (requires browser + microphone) - Run `npm start`, start audio, execute `window.app.getLatencyStats()` in console, record p50/p95/p99 values in research.md
+- [x] T001 [US1] Measure baseline audio latency - ✅ **COMPLETED** (2025-11-12) - Processing: 6ms (p50), System: 35ms, End-to-end: 60-75ms (estimated). See research.md for full data.
 - [x] T002 [P] [US1] Test Tailwind Play CDN in isolated HTML file - ✅ Validated via code analysis, CDN approach confirmed working (~45KB gzipped)
 - [x] T003 [P] [US1] Audit existing `css/styles.css` for specificity conflicts - ✅ No major conflicts found, 60% of CSS can be replaced by Tailwind
 - [x] T004 [P] [US1] Map existing color palette to Tailwind classes - ✅ Created mapping table: 14 colors mapped to Tailwind utilities
