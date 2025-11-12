@@ -160,55 +160,69 @@ class KazooApp {
      * 绑定事件
      */
     bindEvents() {
+        // Skip if DOM elements don't exist (React mode)
+        if (!this.ui.startBtn || !this.ui.stopBtn) {
+            console.log('[KazooApp] Skipping event binding (React mode)');
+            return;
+        }
+
         // 开始/停止 - 注意：UIManager 也在绑定这些按钮，检查是否会双重触发
         this.ui.startBtn.addEventListener('click', () => this.start());
         this.ui.stopBtn.addEventListener('click', () => this.stop());
 
         //  模式切换
-        this.ui.modeToggle.addEventListener('change', (e) => {
-            if (this.isRunning) {
-                alert('Please stop playback before switching modes.');
-                e.target.checked = this.useContinuousMode;
-                return;
-            }
-            this.switchMode(e.target.checked);
-        });
+        if (this.ui.modeToggle) {
+            this.ui.modeToggle.addEventListener('change', (e) => {
+                if (this.isRunning) {
+                    alert('Please stop playback before switching modes.');
+                    e.target.checked = this.useContinuousMode;
+                    return;
+                }
+                this.switchMode(e.target.checked);
+            });
+        }
 
         // 乐器选择
-        this.ui.instrumentBtns.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                // 移除所有按钮的选中状态 (Tailwind classes)
-                this.ui.instrumentBtns.forEach(b => {
-                    b.classList.remove('active', 'bg-blue-50', 'border-blue-500', 'ring-2', 'ring-blue-500', 'shadow-lg');
-                    b.classList.add('bg-white', 'border-gray-200');
+        if (this.ui.instrumentBtns && this.ui.instrumentBtns.length > 0) {
+            this.ui.instrumentBtns.forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    // 移除所有按钮的选中状态 (Tailwind classes)
+                    this.ui.instrumentBtns.forEach(b => {
+                        b.classList.remove('active', 'bg-blue-50', 'border-blue-500', 'ring-2', 'ring-blue-500', 'shadow-lg');
+                        b.classList.add('bg-white', 'border-gray-200');
+                    });
+
+                    // 添加当前按钮的选中状态
+                    e.currentTarget.classList.add('active');
+                    e.currentTarget.classList.remove('bg-white', 'border-gray-200');
+                    e.currentTarget.classList.add('bg-blue-50', 'border-blue-500', 'ring-2', 'ring-blue-500', 'shadow-lg');
+
+                    const instrument = e.currentTarget.dataset.instrument;
+
+                    // 更新状态徽章
+                    const instrumentName = e.currentTarget.querySelector('.instrument-name').textContent;
+                    this.ui.instrumentStatus.textContent = instrumentName;
+
+                    // 如果合成器已初始化，切换乐器（使用当前引擎）
+                    if (this.currentEngine && this.currentEngine.currentSynth) {
+                        this.currentEngine.changeInstrument(instrument);
+                    }
                 });
-
-                // 添加当前按钮的选中状态
-                e.currentTarget.classList.add('active');
-                e.currentTarget.classList.remove('bg-white', 'border-gray-200');
-                e.currentTarget.classList.add('bg-blue-50', 'border-blue-500', 'ring-2', 'ring-blue-500', 'shadow-lg');
-
-                const instrument = e.currentTarget.dataset.instrument;
-
-                // 更新状态徽章
-                const instrumentName = e.currentTarget.querySelector('.instrument-name').textContent;
-                this.ui.instrumentStatus.textContent = instrumentName;
-
-                // 如果合成器已初始化，切换乐器（使用当前引擎）
-                if (this.currentEngine && this.currentEngine.currentSynth) {
-                    this.currentEngine.changeInstrument(instrument);
-                }
             });
-        });
+        }
 
         // 帮助
-        this.ui.helpBtn.addEventListener('click', () => {
-            this.ui.helpContent.classList.toggle('show');
-        });
+        if (this.ui.helpBtn) {
+            this.ui.helpBtn.addEventListener('click', () => {
+                this.ui.helpContent.classList.toggle('show');
+            });
+        }
 
-        this.ui.helpToggle.addEventListener('click', () => {
-            this.ui.helpContent.classList.toggle('show');
-        });
+        if (this.ui.helpToggle) {
+            this.ui.helpToggle.addEventListener('click', () => {
+                this.ui.helpContent.classList.toggle('show');
+            });
+        }
     }
 
     /**
