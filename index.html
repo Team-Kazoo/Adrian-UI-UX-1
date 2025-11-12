@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kazoo Proto - Voice to Instrument</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="navbar-content">
+            <div class="navbar-brand">Kazoo Proto</div>
+            <div class="navbar-actions">
+                <!-- 模式切换开关 (Phase 2 A/B Testing) -->
+                <div class="mode-switcher">
+                    <span class="mode-label">Mode:</span>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="modeToggle" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <span class="mode-text" id="modeText">Continuous</span>
+                    <span class="beta-badge">BETA</span>
+                </div>
+                <button class="btn-text" id="helpBtn">Help</button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <div class="container">
+        <section class="hero">
+            <div class="hero-icon">🎵</div>
+            <h1 class="hero-title">Transform Your Voice</h1>
+            <p class="hero-subtitle">Sing or hum, and hear yourself as any instrument in real-time</p>
+            <div class="hero-badge">Ultra-low latency • Zero setup</div>
+        </section>
+
+        <!-- 简化的2步流程 -->
+        <div class="steps-timeline">
+            <div class="timeline-line"></div>
+            <div class="step-card" data-step="1">
+                <div class="step-icon">
+                    <div class="step-number">1</div>
+                </div>
+                <div class="step-content">
+                    <h3 class="step-title">Pick Your Sound</h3>
+                    <p class="step-description">Choose from 6 realistic instruments: Saxophone, Violin, Piano, Flute, Guitar, or Synth.</p>
+                </div>
+            </div>
+            <div class="step-card" data-step="2">
+                <div class="step-icon">
+                    <div class="step-number">2</div>
+                </div>
+                <div class="step-content">
+                    <h3 class="step-title">Start Playing</h3>
+                    <p class="step-description">Click start, allow microphone access, and begin humming. Hear yourself instantly!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- 控制区 - 简化为2个卡片 -->
+        <section class="control-section">
+            <!-- 乐器选择 -->
+            <div class="control-card" id="instrumentSection">
+                <div class="control-header">
+                    <h2 class="section-title">Choose Your Instrument</h2>
+                    <div class="status-badge" id="instrumentStatus">Saxophone</div>
+                </div>
+                <p class="section-subtitle">Each instrument has unique tonal characteristics. You can change it anytime!</p>
+
+                <div class="instrument-grid">
+                    <button class="instrument-btn active" data-instrument="saxophone">
+                        <span class="instrument-icon">🎷</span>
+                        <span class="instrument-name">Saxophone</span>
+                        <span class="instrument-desc">Warm & Expressive</span>
+                    </button>
+                    <button class="instrument-btn" data-instrument="violin">
+                        <span class="instrument-icon">🎻</span>
+                        <span class="instrument-name">Violin</span>
+                        <span class="instrument-desc">Rich & Lyrical</span>
+                    </button>
+                    <button class="instrument-btn" data-instrument="piano">
+                        <span class="instrument-icon">🎹</span>
+                        <span class="instrument-name">Piano</span>
+                        <span class="instrument-desc">Classic & Clear</span>
+                    </button>
+                    <button class="instrument-btn" data-instrument="flute">
+                        <span class="instrument-icon">🪈</span>
+                        <span class="instrument-name">Flute</span>
+                        <span class="instrument-desc">Bright & Airy</span>
+                    </button>
+                    <button class="instrument-btn" data-instrument="guitar">
+                        <span class="instrument-icon">🎸</span>
+                        <span class="instrument-name">Guitar</span>
+                        <span class="instrument-desc">Plucked & Natural</span>
+                    </button>
+                    <button class="instrument-btn" data-instrument="synth">
+                        <span class="instrument-icon">🎛️</span>
+                        <span class="instrument-name">Synth</span>
+                        <span class="instrument-desc">Electronic & Modern</span>
+                    </button>
+                    <button class="instrument-btn" disabled style="opacity: 0.4; cursor: not-allowed;">
+                        <span class="instrument-icon">🎺</span>
+                        <span class="instrument-name">Trumpet</span>
+                        <span class="instrument-desc">To Be Continued...</span>
+                    </button>
+                    <button class="instrument-btn" disabled style="opacity: 0.4; cursor: not-allowed;">
+                        <span class="instrument-icon">🥁</span>
+                        <span class="instrument-name">Drums</span>
+                        <span class="instrument-desc">Coming Soon!</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 主控制按钮 -->
+            <div class="control-card" id="recordingSection">
+                <div class="control-header">
+                    <h2 class="section-title">Ready to Play?</h2>
+                    <div class="status-badge status-ready" id="recordingStatus">Ready</div>
+                </div>
+                <p class="section-subtitle">Click the button below and start singing or humming. Your voice will be transformed in real-time!</p>
+
+                <div class="text-center">
+                    <button class="btn btn-primary btn-large pulse" id="startBtn">
+                        <span class="btn-icon">▶️</span>
+                        <span>Start Playing</span>
+                    </button>
+                    <button class="btn btn-danger btn-large hidden" id="stopBtn">
+                        <span class="btn-icon">⏹️</span>
+                        <span>Stop</span>
+                    </button>
+                    <p class="helper-text" id="recordingHelper">No setup required • Works in your browser</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 状态显示 -->
+        <div class="status-bar hidden" id="statusBar">
+            <div class="status-item">
+                <div class="status-label">Status</div>
+                <div class="status-value" id="systemStatus">Ready</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Latency</div>
+                <div class="status-value" id="latency">--</div>
+            </div>
+            <div class="status-item">
+                <div class="status-label">Confidence</div>
+                <div class="status-value" id="confidence">--</div>
+            </div>
+        </div>
+
+        <!-- 可视化 - 紧凑布局 -->
+        <div class="visualizer hidden" id="visualizer" style="margin-top: 20px;">
+            <div style="display: flex; align-items: center; gap: 24px; background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
+                <!-- 音符显示 -->
+                <div style="min-width: 140px;">
+                    <div style="font-size: 14px; color: #6b7280; margin-bottom: 4px;">Current Note</div>
+                    <div class="current-note" id="currentNote" style="font-size: 32px; font-weight: bold; color: #1e3a8a;">--</div>
+                    <div class="current-freq" id="currentFreq" style="font-size: 14px; color: #6b7280; margin-top: 4px;">--</div>
+                </div>
+
+                <!-- 音高曲线 -->
+                <div style="flex: 1;">
+                    <canvas id="pitchCanvas" width="600" height="80" style="width: 100%; height: 80px;"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 帮助部分 -->
+        <section class="help-section">
+            <button class="btn-text" id="helpToggle">💡 Tips</button>
+            <div class="help-content" id="helpContent">
+                <h4 style="margin-bottom: 12px;">🎤 Pro Tips</h4>
+                <ul style="margin-left: 20px; margin-bottom: 16px;">
+                    <li>🎧 Use headphones to prevent feedback (or you'll create an infinite echo loop!)</li>
+                    <li>📏 Keep microphone 10-20cm away (close enough to hear, far enough not to eat it)</li>
+                    <li>🎵 Try both modes! Continuous = smooth slides, Legacy = clear notes</li>
+                    <li>🤫 Quiet environment works best (your cat's meowing won't become music... unfortunately)</li>
+                </ul>
+
+                <h4 style="margin-bottom: 12px;">🎛️ Mode Comparison (NEW!)</h4>
+                <ul style="margin-left: 20px; margin-bottom: 16px;">
+                    <li>🌊 <strong>Continuous Mode (Default):</strong> Smooth pitch tracking, follows your voice like a theremin. Perfect for expressive playing and slides!</li>
+                    <li>🎹 <strong>Legacy Mode:</strong> Snap-to-note system, like a piano keyboard. Better for precise, discrete notes.</li>
+                    <li>🔄 Switch anytime using the toggle in the top-right corner (stop playback first!)</li>
+                </ul>
+
+                <h4 style="margin-bottom: 12px;">🎭 Fun Facts</h4>
+                <ul style="margin-left: 20px; margin-bottom: 16px;">
+                    <li>🎷 The saxophone was invented by Adolphe Sax in 1846. Now you can become Adolphe!</li>
+                    <li>⚡ Our latency is <50ms - faster than you can say "supercalifragilisticexpialidocious"</li>
+                    <li>🧠 The YIN algorithm behind this uses some serious math. Don't worry, we did it for you!</li>
+                    <li>🎹 You're basically a human MIDI controller now. Welcome to the future!</li>
+                </ul>
+
+                <h4 style="margin-bottom: 12px;">🐛 Troubleshooting</h4>
+                <ul style="margin-left: 20px; margin-bottom: 16px;">
+                    <li>No sound? Check if your mic is on (not on mute, not in the dishwasher)</li>
+                    <li>Weird sounds? That might just be your singing... kidding! Try a different instrument</li>
+                    <li>High latency? Close that 47-tab browser session. We know it's there.</li>
+                </ul>
+
+                <div class="warning-box hidden" id="warningBox">
+                    <strong>⚠️ Issues Detected:</strong>
+                    <div id="warningText"></div>
+                </div>
+
+                <p style="margin-top: 20px; padding: 12px; background: #f0f9ff; border-radius: 8px; font-size: 14px;">
+                    <strong>🎁 Secret:</strong> Try humming the main theme of your favorite movie.
+                    Does it sound epic? That's because YOU are epic! 🌟
+                </p>
+            </div>
+        </section>
+    </div>
+
+    <!-- 库文件 -->
+    <script src="js/lib/tone.js"></script>
+    <script src="js/lib/pitchfinder-browser.js"></script>
+
+    <!-- Phase 1: 音频配置和抽象层 (必须在其他模块之前加载) -->
+    <script src="js/audio-config.js"></script>
+    <script src="js/audio-io.js"></script>
+    <!-- audio-input.js (Legacy) 已弃用，AudioIO 提供完整功能 -->
+
+    <!-- 应用模块 -->
+    <script src="js/pitch-detector.js"></script>
+    <script src="js/synthesizer.js"></script>
+    <script src="js/continuous-synth.js"></script> <!-- Phase 2: New engine -->
+    <script src="js/performance.js"></script>
+
+    <!-- Phase 3 Stage2: 移除全局桥接脚本，所有模块由 main.js 直接 import -->
+    <!-- Phase 2.10: 主应用 (ES Module) -->
+    <script type="module" src="js/main.js"></script>
+    <!-- 注意：不再加载 calibration.js -->
+</body>
+</html>

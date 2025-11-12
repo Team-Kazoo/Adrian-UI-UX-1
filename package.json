@@ -1,0 +1,47 @@
+{
+  "name": "kazoo-proto-web",
+  "version": "0.3.0",
+  "type": "module",
+  "description": "实时人声到乐器音色转换Web应用",
+  "main": "index.html",
+  "scripts": {
+    "dev": "npx serve . -p 3000",
+    "start": "npx serve . -p 3000",
+    "test": "vitest run",
+    "test:watch": "vitest watch",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:legacy": "node tests/run-all-tests.js",
+    "test:legacy:report": "node tests/run-all-tests.js --report",
+    "deploy": "vercel --prod"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zimingwang/KazooProtoWeb-Alpha4.git"
+  },
+  "keywords": [
+    "audio",
+    "pitch-detection",
+    "web-audio",
+    "tone.js",
+    "yin-algorithm",
+    "real-time",
+    "music",
+    "synthesizer"
+  ],
+  "author": "Ziming Wang",
+  "license": "MIT",
+  "dependencies": {
+    "pitchfinder": "^2.3.2",
+    "tone": "^15.1.22"
+  },
+  "devDependencies": {
+    "@vitest/ui": "^4.0.6",
+    "happy-dom": "^20.0.10",
+    "serve": "^14.2.1",
+    "vitest": "^4.0.6"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}
