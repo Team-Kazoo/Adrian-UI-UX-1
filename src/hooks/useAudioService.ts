@@ -1,6 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import type { AudioState, InstrumentType, AudioMode, AudioServiceControls } from '@/lib/types/audio'
 
+// Extend window interface for legacy JS system
+declare global {
+  interface Window {
+    app?: any
+    container?: any
+    Tone?: any
+  }
+}
+
 /**
  * useAudioService Hook - Complete Audio Integration
  *
@@ -28,21 +37,46 @@ export function useAudioService(): AudioState & AudioServiceControls {
 
     const init = async () => {
       try {
+        setAudioState(prev => ({ ...prev, status: 'Loading audio libraries...' }))
+
         // Load Tone.js and Pitchfinder
         await loadScript('/js/lib/tone.js')
         await loadScript('/js/lib/pitchfinder-browser.js')
 
-        // Load main audio system
-        await import('/js/main.js?v=' + Date.now())
+        // Wait for libraries to initialize
+        await new Promise(resolve => setTimeout(resolve, 200))
 
-        // Wait for initialization
-        await new Promise(resolve => setTimeout(resolve, 500))
+        setAudioState(prev => ({ ...prev, status: 'Initializing audio system...' }))
 
-        if ((window as any).app) {
-          setAudioState(prev => ({ ...prev, isReady: true, status: 'Ready' }))
-          console.log('[Audio] System ready')
+        // Import main.js module (contains container setup)
+        // @ts-ignore - Dynamic import of legacy JS module
+        await import('/js/main.js')
+
+        console.log('[Audio] main.js loaded')
+
+        // Check if window.container and window.app exist
+        // main.js creates these, but only after DOMContentLoaded
+        // In React, we need to manually trigger initialization
+
+        if (window.container && !window.app) {
+          console.log('[Audio] Container exists, creating app manually...')
+          const app = window.container.get('app')
+          window.app = app
+          await app.initialize()
+        }
+
+        // Wait for app to be ready
+        let retries = 0
+        while (!window.app && retries < 30) {
+          await new Promise(resolve => setTimeout(resolve, 100))
+          retries++
+        }
+
+        if (window.app) {
+          setAudioState(prev => ({ ...prev, isReady: true, status: 'Ready - Click Start to begin' }))
+          console.log('[Audio] System ready ✓')
         } else {
-          throw new Error('Audio system not initialized')
+          throw new Error('Audio system failed to initialize (window.app not found)')
         }
       } catch (error) {
         console.error('[Audio] Load failed:', error)
@@ -54,16 +88,27 @@ export function useAudioService(): AudioState & AudioServiceControls {
 
     return () => {
       if (updateIntervalRef.current) clearInterval(updateIntervalRef.current)
-      ;(window as any).app?.stop?.()
+      window.app?.stop?.()
     }
   }, [])
 
   // Start audio
   const start = useCallback(async () => {
     try {
-      await (window as any).app?.start()
+      setAudioState(prev => ({ ...prev, status: 'Starting audio...' }))
+
+      // Resume Tone.js AudioContext (required after user gesture)
+      if (window.Tone?.context?.state === 'suspended') {
+        await window.Tone.start()
+        console.log('[Audio] Tone.js AudioContext resumed')
+      }
+
+      // Start the app
+      await window.app?.start()
+
       setAudioState(prev => ({ ...prev, isPlaying: true, status: `Playing (${prev.currentInstrument})` }))
       startRealTimeUpdates()
+      console.log('[Audio] Started successfully')
     } catch (error) {
       console.error('[Audio] Start failed:', error)
       setAudioState(prev => ({ ...prev, status: 'Error: ' + (error as Error).message }))
@@ -72,14 +117,14 @@ export function useAudioService(): AudioState & AudioServiceControls {
 
   // Stop audio
   const stop = useCallback(() => {
-    ;(window as any).app?.stop()
+    window.app?.stop()
     if (updateIntervalRef.current) clearInterval(updateIntervalRef.current)
     setAudioState(prev => ({ ...prev, isPlaying: false, pitchData: null, status: 'Ready' }))
   }, [])
 
   // Change instrument
   const changeInstrument = useCallback((instrument: InstrumentType) => {
-    ;(window as any).app?.changeInstrument?.(instrument)
+    window.app?.changeInstrument?.(instrument)
     setAudioState(prev => ({
       ...prev,
       currentInstrument: instrument,
@@ -89,8 +134,9 @@ export function useAudioService(): AudioState & AudioServiceControls {
 
   // Change mode
   const changeMode = useCallback((mode: AudioMode) => {
-    const app = (window as any).app
-    if (app) app.useContinuousMode = (mode === 'continuous')
+    if (window.app) {
+      window.app.useContinuousMode = (mode === 'continuous')
+    }
     setAudioState(prev => ({ ...prev, currentMode: mode }))
   }, [])
 
