@@ -25,7 +25,9 @@ export class AudioService {
   // Pitch data (for future use)
   // private lastPitchResult: PitchResult | null = null
 
-  constructor() {
+  private constructor() {
+    console.log('[AudioService] Constructor called')
+
     this.state = {
       isReady: false,
       isPlaying: false,
@@ -374,12 +376,19 @@ export class AudioService {
   }
 }
 
-// Singleton instance
-let instance: AudioService | null = null
+// Singleton instance (stored on window to survive HMR)
+declare global {
+  interface Window {
+    __audioServiceInstance?: AudioService
+  }
+}
 
 export function getAudioService(): AudioService {
-  if (!instance) {
-    instance = new AudioService()
+  if (!window.__audioServiceInstance) {
+    console.log('[AudioService] Creating NEW singleton instance')
+    window.__audioServiceInstance = new AudioService()
+  } else {
+    console.log('[AudioService] Reusing EXISTING singleton instance')
   }
-  return instance
+  return window.__audioServiceInstance
 }
