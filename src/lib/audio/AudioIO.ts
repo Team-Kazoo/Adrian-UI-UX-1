@@ -267,8 +267,8 @@ export class AudioIO {
       throw new Error('AudioContext or stream not initialized')
     }
 
-    // Load worklet module
-    await this.audioContext.audioWorklet.addModule('/js/pitch-worklet.js')
+    // Load worklet module (Vite serves public/ files at root)
+    await this.audioContext.audioWorklet.addModule('/pitch-worklet.js')
 
     // Create source node
     this.sourceNode = this.audioContext.createMediaStreamSource(this.stream)
