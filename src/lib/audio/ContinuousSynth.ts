@@ -183,7 +183,56 @@ export class ContinuousSynth {
   }
 
   /**
-   * Update pitch (call this continuously with detected pitch)
+   * Process complete PitchFrame (from worklet - OLD SYSTEM COMPATIBLE)
+   * This is the CORRECT method that should be used
+   */
+  processPitchFrame(pitchFrame: any): void {
+    if (!pitchFrame || !this.currentSynth) return
+
+    const {
+      frequency,
+      confidence,
+      volume,
+      volumeLinear
+    } = pitchFrame
+
+    const now = Date.now()
+
+    // Validate pitch
+    const isValidPitch =
+      confidence >= this.minConfidence &&
+      frequency && frequency >= 20 && frequency <= 2000
+
+    if (isValidPitch) {
+      // Update last valid pitch time
+      this.lastValidPitchTime = now
+
+      // If not playing, start
+      if (!this.isPlaying) {
+        const vel = Math.min(Math.max((volumeLinear || volume || 0.5) * 2, 0.1), 1)
+        this.currentSynth.triggerAttack(frequency, undefined, vel)
+        this.isPlaying = true
+        this.currentFrequency = frequency
+        this.lastUpdateTime = now
+        this.startSilenceCheck()
+        console.log(`[ContinuousSynth] ▶️ Started at ${frequency.toFixed(1)}Hz`)
+        return
+      }
+
+      // Update frequency smoothly (if changed significantly)
+      if (now - this.lastUpdateTime >= this.minUpdateInterval) {
+        const freqDiff = Math.abs(frequency - this.currentFrequency) / this.currentFrequency
+        if (freqDiff >= this.frequencyUpdateThreshold) {
+          this.currentSynth.frequency.rampTo(frequency, 0.05)
+          this.currentFrequency = frequency
+          this.lastUpdateTime = now
+        }
+      }
+    }
+  }
+
+  /**
+   * Update pitch (simplified interface - DEPRECATED, use processPitchFrame)
    */
   updatePitch(pitchInfo: PitchInfo): void {
     if (!this.currentSynth) {

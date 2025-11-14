@@ -287,13 +287,9 @@ export class AudioService {
       }
     })
 
-    // Forward to synthesizer
+    // Forward COMPLETE PitchFrame to synthesizer (old system passes all fields)
     if (this.state.currentMode === 'continuous') {
-      this.synth.updatePitch({
-        frequency: pitchFrame.frequency,
-        confidence: pitchFrame.confidence,
-        volume: pitchFrame.volume || pitchFrame.volumeLinear || 0
-      })
+      this.synth.processPitchFrame(pitchFrame as any)
     }
   }
 
