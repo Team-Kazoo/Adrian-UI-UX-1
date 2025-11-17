@@ -18,6 +18,7 @@ export default defineConfig({
     // 测试文件匹配模式
     include: [
       'tests/**/*.test.js',
+      'tests/**/*.test.ts',
       'tests/**/*.spec.js',
       'src/**/*.test.ts',
       'src/**/*.test.tsx'
