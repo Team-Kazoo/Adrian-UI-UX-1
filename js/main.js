@@ -640,16 +640,14 @@ class KazooApp {
     handleWorkletPitchFrame(pitchFrame, timestamp, receiveTime) {
         if (!this.isRunning || !this.currentEngine) return;
 
-        //  Phase 1.1: Component-level latency measurement
-        const synthStart = performance.now();
-
-        // Calculate capture duration (buffer accumulation time)
-        // AudioWorklet uses 128 samples @ 44.1kHz = ~2.9ms
-        const captureDuration = pitchFrame.detectionDuration ?
-            (128 / 44100) * 1000 : 3; // Default to ~3ms if not available
-
-        // Detection duration comes from worklet
-        const detectionDuration = pitchFrame.detectionDuration || 0;
+        // Simple end-to-end latency measurement (WORKING)
+        if (receiveTime && pitchFrame.captureTime) {
+            const latency = receiveTime - pitchFrame.captureTime;
+            this.latencyMeasurements.push(latency);
+            if (this.latencyMeasurements.length > 100) {
+                this.latencyMeasurements.shift();
+            }
+        }
 
         // 调试: 首次调用时打印完整 PitchFrame
         if (!this._workletPitchFrameLogged) {
@@ -678,36 +676,12 @@ class KazooApp {
             this.currentEngine.processPitch(pitchFrame);
         }
 
-        const synthEnd = performance.now();
-        const synthesisDuration = synthEnd - synthStart;
-
         // 更新可视化
         this.updateVisualizer(pitchFrame);
 
         // 性能监控结束
         this.performanceMonitor.endProcessing();
         this.performanceMonitor.updateFPS();
-
-        //  Phase 1.1: Record component latency
-        if (receiveTime && pitchFrame.captureTime) {
-            // Output latency = time from synthesis end to receive
-            const outputDuration = receiveTime - pitchFrame.captureTime - detectionDuration - synthesisDuration;
-
-            // Record to new PerformanceMonitor API
-            this.performanceMonitor.recordLatencySample(
-                captureDuration,
-                detectionDuration,
-                synthesisDuration,
-                Math.max(0, outputDuration) // Ensure non-negative
-            );
-
-            // Keep old simple tracking for backward compatibility
-            const latency = receiveTime - pitchFrame.captureTime;
-            this.latencyMeasurements.push(latency);
-            if (this.latencyMeasurements.length > 100) {
-                this.latencyMeasurements.shift();
-            }
-        }
 
         // 更新延迟显示
         const metrics = this.performanceMonitor.getMetrics();
@@ -885,20 +859,22 @@ class KazooApp {
     }
 
     /**
-     *  Phase 1.1: Get latency statistics with component breakdown
-     * @returns {Object} Latency stats with min/max/avg/p50/p95/p99 and component breakdown
+     * Get simple end-to-end latency statistics (WORKING)
+     * @returns {Object} Latency stats with min/max/avg/p50/p95
      */
     getLatencyStats() {
-        // Use new PerformanceMonitor API with component breakdown
-        return this.performanceMonitor.getLatencyStats();
-    }
-
-    /**
-     * Get latency report (includes mode warnings)
-     * @returns {Object} Complete latency report
-     */
-    getLatencyReport() {
-        return this.performanceMonitor.getLatencyReport();
+        if (this.latencyMeasurements.length === 0) {
+            return { min: 0, max: 0, avg: 0, p50: 0, p95: 0, count: 0 };
+        }
+        const sorted = [...this.latencyMeasurements].sort((a, b) => a - b);
+        return {
+            min: sorted[0].toFixed(1),
+            max: sorted[sorted.length - 1].toFixed(1),
+            avg: (sorted.reduce((a, b) => a + b, 0) / sorted.length).toFixed(1),
+            p50: sorted[Math.floor(sorted.length * 0.5)].toFixed(1),
+            p95: sorted[Math.floor(sorted.length * 0.95)].toFixed(1),
+            count: sorted.length
+        };
     }
 
     /**
