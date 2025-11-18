@@ -69,8 +69,8 @@ export default defineConfig({
     // 静默模式 (减少输出)
     silent: false,
 
-    // UI 模式仅在 `vitest --ui` 时启用，避免 CLI 运行时错误启动
-    ui: false
+    // UI 模式配置 (npm run test:ui)
+    ui: true
   },
 
   // 解析配置
