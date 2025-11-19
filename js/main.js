@@ -832,25 +832,26 @@ class KazooApp {
     }
 
     /**
-     * 初始化可视化
+     * 初始化可视化 - Modern Piano Roll Style
      */
     initVisualizer() {
         const canvas = this.ui.pitchCanvas;
-        if (!canvas) {
-            return;
-        }
+        if (!canvas) return;
 
         this.visualizer = {
             ctx: canvas.getContext('2d'),
             history: [],
-            maxHistory: 240,
-            minFreq: 98.00,   // G2 (approx) - focused on vocal range
-            maxFreq: 400.00,  // G4 (approx)
-            referenceNotes: [
-                { freq: 130.81, note: 'C3' },
-                { freq: 196.00, note: 'G3' },
-                { freq: 261.63, note: 'C4' }
-            ],
+            maxHistory: 300, // Keep ~5-6 seconds of history at 60fps
+            
+            // Vocal Range: E2 (82Hz) to C6 (1047Hz)
+            // Using MIDI note numbers for logarithmic scaling
+            minMidi: 40,  // E2
+            maxMidi: 84,  // C6
+            
+            gridColor: 'rgba(255, 255, 255, 0.05)',
+            cNoteColor: 'rgba(255, 255, 255, 0.15)',
+            activeNoteColor: 'rgba(255, 255, 255, 0.1)',
+            
             lastFrame: null
         };
 
@@ -859,16 +860,36 @@ class KazooApp {
     }
 
     /**
-     * 更新可视化 - 简易音高曲线
+     * 辅助：频率转 MIDI 音符编号 (Float)
+     */
+    _freqToMidi(freq) {
+        if (!freq || freq <= 0) return 0;
+        return 69 + 12 * Math.log2(freq / 440);
+    }
+
+    /**
+     * 辅助：MIDI 音符编号转 Y 坐标
+     */
+    _midiToY(midi, canvasHeight) {
+        const { minMidi, maxMidi } = this.visualizer;
+        // Map MIDI range to 0-1 (inverted because Canvas Y=0 is top)
+        const normalized = 1 - (midi - minMidi) / (maxMidi - minMidi);
+        return normalized * canvasHeight;
+    }
+
+    /**
+     * 更新可视化
      */
     updateVisualizer(pitchInfo) {
-        if (!this.visualizer || !this.ui.pitchCanvas) {
-            return;
-        }
+        if (!this.visualizer || !this.ui.pitchCanvas) return;
 
+        // 仅在有置信度时记录，或者记录 null 表示中断
+        // 为了线条连续性，我们记录所有帧，但在绘制时处理中断
         this.visualizer.history.push({
             frequency: pitchInfo.frequency,
-            confidence: pitchInfo.confidence || 0
+            confidence: pitchInfo.confidence || 0,
+            midi: this._freqToMidi(pitchInfo.frequency),
+            timestamp: Date.now()
         });
 
         if (this.visualizer.history.length > this.visualizer.maxHistory) {
@@ -880,86 +901,143 @@ class KazooApp {
     }
 
     drawVisualizer() {
-        if (!this.visualizer || !this.ui.pitchCanvas) {
-            return;
-        }
-
+        const { ctx, history, minMidi, maxMidi } = this.visualizer;
         const canvas = this.ui.pitchCanvas;
-        const ctx = this.visualizer.ctx;
-        const { minFreq, maxFreq, referenceNotes, history } = this.visualizer;
+        if (!ctx || !canvas) return;
 
-        if (!ctx) {
-            return;
+        const width = canvas.width;
+        const height = canvas.height;
+
+        // 1. Clear & Background
+        ctx.clearRect(0, 0, width, height);
+        
+        // 2. Draw Piano Roll Grid (Semitones)
+        // Loop through all MIDI notes in range
+        const startNote = Math.ceil(minMidi);
+        const endNote = Math.floor(maxMidi);
+        
+        // Calculate current note row to highlight
+        const currentFreq = this.visualizer.lastFrame?.frequency;
+        const currentMidi = this._freqToMidi(currentFreq);
+        const currentNoteRounded = Math.round(currentMidi);
+
+        ctx.lineWidth = 1;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '10px Inter, sans-serif';
+
+        for (let i = startNote; i <= endNote; i++) {
+            const y = this._midiToY(i, height);
+            const isC = i % 12 === 0; // C notes (0=C-1, 12=C0, 24=C1, 36=C2, 48=C3...)
+            
+            // Highlight current detected note row
+            const isCurrentRow = (i === currentNoteRounded) && (this.visualizer.lastFrame?.confidence > 0.1);
+
+            ctx.beginPath();
+            
+            if (isCurrentRow) {
+                ctx.fillStyle = 'rgba(66, 133, 244, 0.15)'; // Active note row highlight
+                const rowHeight = height / (maxMidi - minMidi);
+                ctx.fillRect(0, y - rowHeight/2, width, rowHeight);
+            }
+
+            // Grid Line
+            if (isC) {
+                ctx.strokeStyle = this.visualizer.cNoteColor;
+                ctx.lineWidth = 1;
+            } else {
+                ctx.strokeStyle = this.visualizer.gridColor;
+                ctx.lineWidth = 0.5;
+            }
+            
+            ctx.moveTo(0, y);
+            ctx.lineTo(width, y);
+            ctx.stroke();
+
+            // Labels for C notes
+            if (isC) {
+                const octave = (i / 12) - 1;
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+                ctx.fillText(`C${octave}`, 5, y - 2);
+            }
         }
 
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        // 3. Draw Pitch Curve
+        if (history.length < 2) return;
 
-        const background = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        background.addColorStop(0, 'rgba(255, 255, 255, 0.18)');
-        background.addColorStop(1, 'rgba(13, 13, 15, 0.05)');
-        ctx.fillStyle = background;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.beginPath();
+        
+        // Create Gradient
+        const gradient = ctx.createLinearGradient(0, 0, width, 0);
+        gradient.addColorStop(0, 'rgba(66, 133, 244, 0)');
+        gradient.addColorStop(0.2, 'rgba(66, 133, 244, 0.5)');
+        gradient.addColorStop(0.8, 'rgba(52, 168, 83, 0.8)');
+        gradient.addColorStop(1, '#fff');
 
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255,255,255,0.16)';
-        ctx.lineWidth = 1;
-        ctx.font = '12px Inter, sans-serif';
-        ctx.fillStyle = 'rgba(255,255,255,0.6)';
-        ctx.textBaseline = 'bottom';
+        ctx.strokeStyle = gradient;
+        ctx.lineWidth = 3;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
 
-        referenceNotes.forEach(ref => {
-            const normalized = (ref.freq - minFreq) / (maxFreq - minFreq);
-            const clamped = Math.min(Math.max(normalized, 0), 1);
-            const y = canvas.height - (clamped * canvas.height * 0.8) - canvas.height * 0.1;
+        // Filter out low confidence points for the path?
+        // Or just draw gaps. Let's draw a continuous line but skip 0 freq.
+        
+        let started = false;
+        const xStep = width / (this.visualizer.maxHistory - 1);
 
+        for (let i = 0; i < history.length; i++) {
+            const point = history[i];
+            const x = i * xStep;
+            
+            // Skip if silence or low confidence
+            if (point.confidence < 0.1 || point.frequency < 50) {
+                started = false;
+                continue;
+            }
+
+            const y = this._midiToY(point.midi, height);
+
+            if (!started) {
+                ctx.moveTo(x, y);
+                started = true;
+            } else {
+                // Smooth curve using quadratic bezier (optional, lineTo is faster/cleaner for dense points)
+                ctx.lineTo(x, y); 
+            }
+        }
+        
+        // Add Glow
+        ctx.shadowBlur = 10;
+        ctx.shadowColor = 'rgba(66, 133, 244, 0.8)';
+        ctx.stroke();
+        ctx.shadowBlur = 0; // Reset
+
+        // 4. Current Pitch Indicator (Right Side)
+        const last = history[history.length - 1];
+        if (last && last.confidence > 0.1 && last.frequency > 50) {
+            const y = this._midiToY(last.midi, height);
+            const x = width - 5;
+
+            // Glowing Dot
             ctx.beginPath();
-            ctx.moveTo(0, y);
-            ctx.lineTo(canvas.width, y);
-            ctx.stroke();
-            ctx.fillText(ref.note, 10, y - 4);
-        });
-        ctx.restore();
-
-        if (history.length > 1) {
-            const lineGradient = ctx.createLinearGradient(0, 0, canvas.width, 0);
-            lineGradient.addColorStop(0, 'rgba(0, 113, 227, 0.35)');
-            lineGradient.addColorStop(1, 'rgba(94, 92, 230, 0.75)');
-
-            ctx.lineWidth = 2.5;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.strokeStyle = lineGradient;
-            ctx.beginPath();
-
-            const xStep = canvas.width / Math.max(history.length - 1, 1);
-            history.forEach((entry, index) => {
-                const x = index * xStep;
-                const normalized = (entry.frequency - minFreq) / (maxFreq - minFreq);
-                const clamped = Math.min(Math.max(normalized, 0), 1);
-                const y = canvas.height - (clamped * canvas.height * 0.8) - canvas.height * 0.1;
-
-                if (index === 0) {
-                    ctx.moveTo(x, y);
-                } else {
-                    ctx.lineTo(x, y);
-                }
-            });
-
-            ctx.stroke();
-
-            const latest = history[history.length - 1];
-            const latestX = (history.length - 1) * xStep;
-            const latestNormalized = (latest.frequency - minFreq) / (maxFreq - minFreq);
-            const latestClamped = Math.min(Math.max(latestNormalized, 0), 1);
-            const latestY = canvas.height - (latestClamped * canvas.height * 0.8) - canvas.height * 0.1;
-
-            ctx.beginPath();
-            ctx.fillStyle = 'rgba(255,255,255,0.9)';
-            ctx.strokeStyle = 'rgba(0, 113, 227, 0.8)';
-            ctx.lineWidth = 1.5;
-            ctx.arc(latestX, latestY, 6, 0, Math.PI * 2);
+            ctx.arc(x, y, 4, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.shadowBlur = 15;
+            ctx.shadowColor = '#fff';
             ctx.fill();
-            ctx.stroke();
+            ctx.shadowBlur = 0;
+
+            // Current Note Label Bubble
+            const noteName = this.ui.currentNote.textContent; // Use existing logic result
+            ctx.fillStyle = 'rgba(66, 133, 244, 0.9)';
+            ctx.beginPath();
+            ctx.roundRect(width - 40, y - 10, 35, 20, 4);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 11px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText(noteName, width - 22, y);
         }
     }
 
@@ -969,10 +1047,14 @@ class KazooApp {
         }
 
         const canvas = this.ui.pitchCanvas;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width;
-        canvas.height = rect.height;
-        this.visualizer.ctx = canvas.getContext('2d');
+        // Use parent container dimensions
+        const parent = canvas.parentElement;
+        if (parent) {
+            canvas.width = parent.clientWidth;
+            canvas.height = parent.clientHeight;
+        }
+        
+        // Redraw immediately
         this.drawVisualizer();
     }
 
