@@ -413,6 +413,15 @@ class PitchDetectorWorklet extends AudioWorkletProcessor {
                     } else if (frequency === null) {
                         this.port.postMessage({ type: 'no-pitch', data: { volume } });
                     }
+                } else {
+                    // Debug: Volume too low
+                    this.lowVolumeFrameCount = (this.lowVolumeFrameCount || 0) + 1;
+                    if (this.lowVolumeFrameCount % 100 === 0) {
+                        this.port.postMessage({ 
+                            type: 'volume-too-low', 
+                            data: { volume: volume.toFixed(6), threshold: this.config.minVolumeThreshold } 
+                        });
+                    }
                 }
 
                 const halfSize = Math.floor(this.accumulationBuffer.length / 2);

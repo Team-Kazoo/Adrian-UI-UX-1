@@ -415,7 +415,7 @@ class AudioIO {
             smoothingSize: 5,  // 中值滤波窗口 (固定)
 
             // 音量阈值 (从集中式配置读取)
-            minVolumeThreshold: config.pitchDetector?.minVolumeThreshold ?? 0.002,  // 🔥 从配置读取
+            minVolumeThreshold: Number(config.pitchDetector?.minVolumeThreshold) || 0.0001,  // 🔥 强制转为数字并提供安全回退
 
             //  EMA 滤波器参数 (用于 Worklet 内部平滑)
             volumeAlpha: config.smoothing?.volume?.alpha ?? 0.3,
