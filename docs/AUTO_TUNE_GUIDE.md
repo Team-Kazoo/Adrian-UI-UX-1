@@ -6,6 +6,8 @@ Auto-Tune 是一个音高修正功能,可以将你唱出的音高自动"吸附"�
 
 就像歌手录音时使用的修音软件一样,它会帮你纠正跑调的音符!
 
+**v0.4.1 更新注意**: API 已变更为 "Retune Speed" (修正速度) 模式，与旧版 "Correction Amount" (修正强度) 逻辑不同。
+
 ## 核心功能
 
 ### 1. 音高量化 (Pitch Quantization)
@@ -14,14 +16,19 @@ Auto-Tune 是一个音高修正功能,可以将你唱出的音高自动"吸附"�
 - **输入**: 442Hz (稍微跑调的A4)
 - **输出**: 440Hz (标准的A4)
 
-### 2. 可调修正强度
+### 2. 可调修正速度 (Retune Speed)
 
-控制修正的程度:
-- **0%**: 完全不修正,保持原始音高
-- **50%**: 修正一半,自然但有帮助
-- **100%**: 完全修正,绝对准确但可能失去表现力
+控制音高修正的速度 (注意：这与传统的"强度"混合不同):
+- **0% (Robot)**: 瞬间吸附 (0ms)，产生 T-Pain 式的"电音"效果。
+- **50%**: 中等速度，平衡音准与自然度。
+- **100% (Natural)**: 慢速修正 (约200ms)，保留自然的滑音和颤音，只在长音时修正音准。
 
-### 3. 音阶过滤
+### 3. 迟滞处理 (Hysteresis)
+
+- 智能防止在两个音符之间快速跳动。
+- 只有当你明显唱到下一个音符时，系统才会切换目标音符。
+
+### 4. 音阶过滤
 
 只修正到特定音阶内的音符:
 - **全音阶** (CHROMATIC): 所有12个半音
@@ -41,16 +48,19 @@ const synth = window.container.get('continuousSynthEngine');
 
 // ===== 基本使用 =====
 
-// 1. 启用 Auto-Tune (50%修正强度)
-synth.setAutoTune(true, 0.5);
+// 1. 启用 Auto-Tune (0% Speed = Robot Mode)
+synth.setAutoTune(true, 0.0);
 
 // 2. 关闭 Auto-Tune
 synth.setAutoTune(false);
 
 // ===== 高级设置 =====
 
-// 启用100%修正(完全自动调音)
+// 设置为自然模式 (100% Speed = Natural)
 synth.setAutoTune(true, 1.0);
+
+// 设置为平衡模式 (50% Speed)
+synth.setAutoTune(true, 0.5);
 
 // 设置为C大调音阶
 synth.setAutoTuneScale('MAJOR', 'C');
@@ -101,66 +111,50 @@ console.log(synth.getAutoTuneStats());
 ✅ **演奏歌曲**: 让你的演奏听起来更专业
 ✅ **录音**: 修正小瑕疵,提升录音质量
 
-### 不建议使用的场景
+### 推荐参数 (Retune Speed)
 
-❌ **自由即兴**: 会限制表现力和创造力
-❌ **滑音效果**: Auto-Tune会"纠正"你故意的滑音
-❌ **颤音效果**: 可能会破坏自然的颤音
-
-### 推荐参数
-
-| 使用场景 | 修正强度 | 音阶 |
-|---------|----------|------|
-| 新手练习 | 70%-100% | CHROMATIC |
-| 一般演奏 | 30%-50% | MAJOR/MINOR |
-| 专业演奏 | 10%-30% | CHROMATIC |
-| 特殊效果 | 100% | PENTATONIC |
+| 使用场景 | Retune Speed | 效果 |
+|---------|--------------|------|
+| 特殊效果 (Trap/Hip-hop) | 0% (Robot) | 瞬间吸附，强烈的电音感 |
+| 流行歌曲演奏 | 20% - 50% | 快速修正，但保留一定人性化 |
+| 自然人声/练习 | 80% - 100% | 慢速修正，极其自然，仅辅助音准 |
 
 ## 示例场景
 
-### 场景1: 练习C大调歌曲
+### 场景1: 练习C大调歌曲 (自然辅助)
 
 ```javascript
-// 设置C大调,50%修正
-synth.setAutoTune(true, 0.5);
+// 设置C大调, 80% 速度 (自然)
+synth.setAutoTune(true, 0.8);
 synth.setAutoTuneScale('MAJOR', 'C');
 
 // 现在你唱的音会自动修正到C大调音阶
-// 即使稍微跑调也会被修正到最近的正确音符
+// 听起来很自然，不会有机器人的感觉
 ```
 
-### 场景2: 模仿T-Pain效果
+### 场景2: 模仿T-Pain效果 (电音)
 
 ```javascript
-// 100%修正 + 极短的Portamento
-synth.setAutoTune(true, 1.0);
+// 0% 速度 (Robot)
+synth.setAutoTune(true, 0.0);
 synth.setAutoTuneScale('CHROMATIC', 'C');
 
 // 这会产生明显的"机器人"音效
 // 就像T-Pain的自动调音效果
 ```
 
-### 场景3: 自然修正
-
-```javascript
-// 30%修正,保持自然感
-synth.setAutoTune(true, 0.3);
-synth.setAutoTuneScale('CHROMATIC', 'C');
-
-// 只修正明显跑调的部分
-// 保留自然的音高变化和表现力
-```
-
 ## 技术细节
 
-### 算法流程
+### 算法流程 (v0.4.1 更新)
 
 1. **检测**: 从麦克风检测原始音高 (例如: 442Hz)
-2. **转换**: 频率 → MIDI音符号 (442Hz ≈ MIDI 69.08)
-3. **量化**: 吸附到最近的音阶内音符 (69.08 → 69)
-4. **计算**: 目标MIDI → 目标频率 (69 → 440Hz)
-5. **插值**: 根据修正强度混合原始和目标频率
-6. **输出**: 修正后的频率传给合成器
+2. **迟滞判断**: 检查输入是否偏离当前音符超过阈值 (0.6半音)，防止抖动。
+3. **目标计算**: 找到最近的音阶内音符。
+4. **平滑处理 (Time-based Smoothing)**: 
+   - 使用指数平滑算法，根据 `Retune Speed` 决定向目标音高移动的速度。
+   - Speed 0% -> Tau ≈ 0ms (瞬间)
+   - Speed 100% -> Tau ≈ 200ms (慢速)
+5. **输出**: 输出平滑后的频率。
 
 ### 性能指标
 
@@ -168,40 +162,21 @@ synth.setAutoTuneScale('CHROMATIC', 'C');
 - **延迟**: < 1ms (不影响实时性)
 - **内存占用**: < 1KB
 
-### 与Portamento的区别
-
-| 特性 | Auto-Tune | Portamento |
-|------|-----------|------------|
-| 作用 | 修正音高到正确音符 | 平滑音符间过渡 |
-| 效果 | 音准更好 | 滑音效果 |
-| 延迟 | < 1ms | 10-100ms |
-| 是否改变音高 | 是 | 否 |
-
-两者可以同时使用,效果叠加!
-
 ## 故障排查
 
 ### Q: Auto-Tune不起作用?
 
 A: 检查以下几点:
-1. 确认已调用 `setAutoTune(true, amount)`
-2. 修正强度不能为0
-3. 检查 `autotuneEnabled` 状态: `synth.autotuneEnabled`
+1. 确认已调用 `setAutoTune(true, speed)`
+2. 检查 `autotuneEnabled` 状态: `synth.autotuneEnabled`
 
-### Q: 音质变差了?
+### Q: 为什么没有那种"电音"味?
 
-A: 降低修正强度:
-```javascript
-synth.setAutoTune(true, 0.3); // 从1.0降到0.3
-```
+A: 你的速度设置太慢了。请将 `Retune Speed` 设为 `0` (0%)。
 
-### Q: 滑音效果消失了?
+### Q: 音高在两个音之间乱跳?
 
-A: Auto-Tune会修正音高偏移,与滑音冲突:
-```javascript
-// 临时关闭 Auto-Tune
-synth.setAutoTune(false);
-```
+A: 这是"迟滞"在起作用，防止乱跳。但如果你唱得太不准（在两个音正中间），系统可能会困惑。尝试唱得更果断一点。
 
 ### Q: 如何查看是否生效?
 
@@ -212,14 +187,7 @@ console.log(`已修正: ${stats.correctedCount} 次`);
 console.log(`平均误差: ${stats.avgCentsError.toFixed(1)} cents`);
 ```
 
-## 下一步
-
-- 🎤 试试不同的修正强度,找到最适合你的设置
-- 🎵 尝试不同的音阶,探索不同的音乐风格
-- 📊 查看统计数据,了解你的音准水平
-- 🎸 结合其他效果器(Vibrato, Reverb)创造独特音色
-
 ---
 
-**版本**: v0.4.1
+**版本**: v0.4.2
 **最后更新**: 2025-11-19
