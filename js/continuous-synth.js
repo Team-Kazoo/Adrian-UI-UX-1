@@ -25,7 +25,7 @@ import { getNearestScaleNote } from './core/music-scales.js';
  * @version 2.0.1-alpha
  */
 
-class ContinuousSynthEngine {
+export class ContinuousSynthEngine {
     /**
      * @param {Object} options - 配置选项
      * @param {Object} options.appConfig: 集中式配置对象
