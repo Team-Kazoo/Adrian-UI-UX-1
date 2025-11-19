@@ -14,8 +14,13 @@
 
 /**
  * @typedef {Object} InstrumentPreset
+ * @property {string} type - 合成器类型: 'MonoSynth' | 'FMSynth' | 'AMSynth'
  * @property {Object} oscillator - 振荡器配置
  * @property {string} oscillator.type - 波形类型: 'sawtooth' | 'sine' | 'square' | 'triangle'
+ * @property {Object} [modulation] - 调制配置 (仅 FM/AM)
+ * @property {string} modulation.type - 调制波形
+ * @property {number} modulation.harmonicity - 谐波比率
+ * @property {number} modulation.modulationIndex - 调制指数
  * @property {Object} envelope - ADSR 包络
  * @property {number} envelope.attack - Attack 时间 (秒)
  * @property {number} envelope.decay - Decay 时间 (秒)
@@ -37,9 +42,11 @@
  */
 export const DEFAULT_INSTRUMENT_PRESETS = {
     saxophone: {
+        type: 'FMSynth',
         oscillator: { type: 'sawtooth' },
+        modulation: { type: 'sine', harmonicity: 0.5, modulationIndex: 10 },
         envelope: {
-            attack: 0.01,
+            attack: 0.05,
             decay: 0.2,
             sustain: 0.8,
             release: 0.3
@@ -52,11 +59,13 @@ export const DEFAULT_INSTRUMENT_PRESETS = {
             sustain: 0.5,
             release: 0.3
         },
-        portamento: 0.03  // 30ms 滑音时间（中等表现力）
+        portamento: 0.03
     },
 
     violin: {
+        type: 'AMSynth',
         oscillator: { type: 'sawtooth' },
+        modulation: { type: 'triangle', harmonicity: 1.0, modulationIndex: 5 },
         envelope: {
             attack: 0.1,
             decay: 0.1,
@@ -71,34 +80,38 @@ export const DEFAULT_INSTRUMENT_PRESETS = {
             sustain: 0.7,
             release: 0.4
         },
-        portamento: 0.05  // 50ms 更明显的滑音（弦乐特征）
+        portamento: 0.05
     },
 
     piano: {
-        oscillator: { type: 'triangle' },
+        type: 'FMSynth', // Electric Piano Style
+        oscillator: { type: 'sine' },
+        modulation: { type: 'sine', harmonicity: 3.0, modulationIndex: 15 },
         envelope: {
             attack: 0.005,
-            decay: 0.3,
+            decay: 0.5,
             sustain: 0.1,
             release: 1.0
         },
         filterEnvelope: {
-            baseFrequency: 3000,
+            baseFrequency: 2000,
             octaves: 1,
             attack: 0.005,
             decay: 0.2,
             sustain: 0.2,
             release: 0.8
         },
-        portamento: 0.01  // 10ms 快速（钢琴音色更清晰）
+        portamento: 0.01
     },
 
     flute: {
+        type: 'FMSynth',
         oscillator: { type: 'sine' },
+        modulation: { type: 'sine', harmonicity: 1.0, modulationIndex: 5 },
         envelope: {
-            attack: 0.02,
+            attack: 0.05,
             decay: 0.1,
-            sustain: 0.8,
+            sustain: 0.9,
             release: 0.2
         },
         filterEnvelope: {
@@ -109,11 +122,12 @@ export const DEFAULT_INSTRUMENT_PRESETS = {
             sustain: 0.6,
             release: 0.2
         },
-        portamento: 0.025  // 25ms 轻快的滑音
+        portamento: 0.025
     },
 
     guitar: {
-        oscillator: { type: 'triangle' },
+        type: 'MonoSynth',
+        oscillator: { type: 'sawtooth' }, // Approximating string
         envelope: {
             attack: 0.005,
             decay: 0.4,
@@ -121,17 +135,18 @@ export const DEFAULT_INSTRUMENT_PRESETS = {
             release: 0.6
         },
         filterEnvelope: {
-            baseFrequency: 2200,
+            baseFrequency: 1500,
             octaves: 1.5,
             attack: 0.005,
             decay: 0.3,
             sustain: 0.2,
             release: 0.5
         },
-        portamento: 0.015  // 15ms 适度滑音
+        portamento: 0.015
     },
 
     synth: {
+        type: 'MonoSynth',
         oscillator: { type: 'square' },
         envelope: {
             attack: 0.005,
@@ -147,7 +162,7 @@ export const DEFAULT_INSTRUMENT_PRESETS = {
             sustain: 0.8,
             release: 0.15
         },
-        portamento: 0.02  // 20ms 电子感觉
+        portamento: 0.02
     }
 };
 
@@ -159,6 +174,13 @@ export const DEFAULT_INSTRUMENT_PRESETS = {
  */
 export function validateInstrumentPreset(preset) {
     const errors = [];
+
+    // 默认类型为 MonoSynth
+    if (!preset.type) preset.type = 'MonoSynth';
+
+    if (!['MonoSynth', 'FMSynth', 'AMSynth'].includes(preset.type)) {
+        errors.push(`无效的合成器类型: ${preset.type}`);
+    }
 
     // 验证振荡器
     if (!preset.oscillator) {

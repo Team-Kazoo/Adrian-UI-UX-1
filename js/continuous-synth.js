@@ -288,24 +288,62 @@ class ContinuousSynthEngine {
         }
 
         const preset = this.instrumentPresets[instrument] || this.instrumentPresets.saxophone;
+        const type = preset.type || 'MonoSynth';
 
-        // 使用 MonoSynth 支持连续频率控制
-        this.currentSynth = new Tone.MonoSynth({
-            oscillator: preset.oscillator,
-            envelope: preset.envelope,
-            filterEnvelope: preset.filterEnvelope,
-            portamento: preset.portamento  // 关键：内置滑音
-        });
+        try {
+            switch (type) {
+                case 'FMSynth':
+                    this.currentSynth = new Tone.FMSynth({
+                        harmonicity: preset.modulation?.harmonicity || 3,
+                        modulationIndex: preset.modulation?.modulationIndex || 10,
+                        oscillator: preset.oscillator,
+                        modulation: preset.modulation,
+                        envelope: preset.envelope,
+                        modulationEnvelope: preset.filterEnvelope, // Map filterEnvelope to modulationEnvelope for FM
+                        portamento: preset.portamento
+                    });
+                    break;
 
-        // 初始音量设为静音，防止 start() 时的瞬时爆音
-        // 真正的音量由 updateVolume() 动态控制
-        this.currentSynth.volume.value = -60;
+                case 'AMSynth':
+                    this.currentSynth = new Tone.AMSynth({
+                        harmonicity: preset.modulation?.harmonicity || 3,
+                        oscillator: preset.oscillator,
+                        modulation: preset.modulation,
+                        envelope: preset.envelope,
+                        modulationEnvelope: preset.filterEnvelope, // Map filterEnvelope to modulationEnvelope
+                        portamento: preset.portamento
+                    });
+                    break;
 
-        // 连接到效果器链
-        this.currentSynth.connect(this.vibrato);
+                case 'MonoSynth':
+                default:
+                    this.currentSynth = new Tone.MonoSynth({
+                        oscillator: preset.oscillator,
+                        envelope: preset.envelope,
+                        filterEnvelope: preset.filterEnvelope,
+                        portamento: preset.portamento
+                    });
+                    break;
+            }
 
-        this.currentInstrument = instrument;
-        console.log(`[ContinuousSynth] Created: ${instrument} (portamento: ${preset.portamento}s)`);
+            // 初始音量设为静音，防止 start() 时的瞬时爆音
+            this.currentSynth.volume.value = -60;
+
+            // 连接到效果器链
+            this.currentSynth.connect(this.vibrato);
+
+            this.currentInstrument = instrument;
+            console.log(`[ContinuousSynth] Created: ${instrument} (${type}, portamento: ${preset.portamento}s)`);
+
+        } catch (error) {
+            console.error(`[ContinuousSynth] Failed to create synthesizer for ${instrument}:`, error);
+            // Fallback to MonoSynth if anything fails
+            if (type !== 'MonoSynth') {
+                console.warn('[ContinuousSynth] Falling back to MonoSynth');
+                this.currentSynth = new Tone.MonoSynth();
+                this.currentSynth.connect(this.vibrato);
+            }
+        }
     }
 
     /**
