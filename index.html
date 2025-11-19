@@ -442,23 +442,7 @@
 
     <!-- 修复与交互脚本 -->
     <script>
-        // 安全补丁：防止 "Cannot read classList of null"
-        // 在 DOM 加载但 JS 执行前，确保核心 ID 存在
         document.addEventListener('DOMContentLoaded', () => {
-            const requiredIds = ['stopBtn', 'startBtn', 'warningBox', 'warningText'];
-            requiredIds.forEach(id => {
-                if (!document.getElementById(id)) {
-                    console.warn(`Safety Patch: Created missing element #${id} to prevent crash.`);
-                    const div = document.createElement('div');
-                    div.id = id;
-                    div.style.display = 'none'; // 隐藏它，只为了让 JS 不报错
-                    document.body.appendChild(div);
-                }
-            });
-
-            // 🔥 [ARCHITECTURE FIX] 乐器按钮逻辑已移至 main.js (lines 174-196)
-            // 移除了此处的重复代码，保持 HTML 纯净
-
             // 修复 Tips Toggle
             const helpToggle = document.getElementById('helpToggle');
             const helpContent = document.getElementById('helpContent');

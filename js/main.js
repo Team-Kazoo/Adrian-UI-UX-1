@@ -707,12 +707,12 @@ class KazooApp {
             ctx: canvas.getContext('2d'),
             history: [],
             maxHistory: 240,
-            minFreq: 65.41,   // C2
-            maxFreq: 1046.50, // C6
+            minFreq: 98.00,   // G2 (approx) - focused on vocal range
+            maxFreq: 400.00,  // G4 (approx)
             referenceNotes: [
                 { freq: 130.81, note: 'C3' },
-                { freq: 261.63, note: 'C4' },
-                { freq: 523.25, note: 'C5' }
+                { freq: 196.00, note: 'G3' },
+                { freq: 261.63, note: 'C4' }
             ],
             lastFrame: null
         };
