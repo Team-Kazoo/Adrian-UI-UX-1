@@ -222,6 +222,37 @@ class KazooApp {
                 });
             });
         }
+
+        // Keyboard Shortcuts
+        document.addEventListener('keydown', (e) => {
+            // 'T' for Auto-Tune Toggle
+            if (e.key.toLowerCase() === 't') {
+                if (this.currentEngine === this.continuousSynthEngine) {
+                    const currentStrength = this.continuousSynthEngine.autoTuneStrength || 0;
+                    const newStrength = currentStrength > 0.5 ? 0.0 : 1.0; // Toggle 0 <-> 1
+                    
+                    this.continuousSynthEngine.setAutoTuneStrength(newStrength);
+                    
+                    // Visual Feedback
+                    const originalText = `Running (${this.useContinuousMode ? 'Continuous' : 'Legacy'})`;
+                    this.ui.systemStatus.textContent = `Auto-Tune: ${newStrength > 0 ? 'ON' : 'OFF'}`;
+                    this.ui.systemStatus.classList.add('highlight'); // Optional: add css class if exists, or just rely on text
+                    
+                    console.log(`[Main] 🎹 Auto-Tune toggled ${newStrength > 0 ? 'ON' : 'OFF'} (Strength: ${newStrength})`);
+
+                    // Revert text after 2s
+                    if (this._statusTimeout) clearTimeout(this._statusTimeout);
+                    this._statusTimeout = setTimeout(() => {
+                        if (this.isRunning) {
+                             this.ui.systemStatus.textContent = originalText;
+                        }
+                        this.ui.systemStatus.classList.remove('highlight');
+                    }, 2000);
+                } else {
+                    console.log('[Main] ⚠️ Auto-Tune only available in Continuous Mode');
+                }
+            }
+        });
     }
 
     /**

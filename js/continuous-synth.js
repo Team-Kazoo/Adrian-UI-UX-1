@@ -210,8 +210,20 @@ class ContinuousSynthEngine {
             updateLatency: []
         };
 
+        // Auto-Tune 参数
+        this.autoTuneStrength = 0.0; // 0.0 (Natural) -> 1.0 (Hard Tune)
+
         console.log('[ContinuousSynth] ✓ Initialized with continuous frequency tracking');
         console.log('[ContinuousSynth] ✓ Expressive Features: cents, brightness, breathiness, articulation');
+    }
+
+    /**
+     * 设置自动调音强度
+     * @param {number} strength - 0.0 (无) ~ 1.0 (完全量化)
+     */
+    setAutoTuneStrength(strength) {
+        this.autoTuneStrength = Math.max(0, Math.min(1, strength));
+        console.log(`[ContinuousSynth] 🔧 Auto-Tune Strength: ${(this.autoTuneStrength * 100).toFixed(0)}%`);
     }
 
     /**
@@ -388,10 +400,10 @@ class ContinuousSynthEngine {
     }
 
     /**
-     * Task 1: 使用 cents 进行精细 pitch bend
+     * Task 1: 使用 cents 进行精细 pitch bend & Auto-Tune
      *
-     * @param {number} frequency - 基础频率 (Hz)
-     * @param {number} cents - 音分偏移 (-50 ~ +50)
+     * @param {number} frequency - 基础频率 (Hz, Raw)
+     * @param {number} cents - 音分偏移 (Deviation from nearest note)
      * @param {number} timestamp - 时间戳
      */
     updateFrequencyWithCents(frequency, cents, timestamp) {
@@ -400,14 +412,18 @@ class ContinuousSynthEngine {
             return;
         }
 
-        // 使用 cents 进行微调
-        // cents 为 0 时，pitchBendRatio = 1 (无偏移)
-        // cents 为 100 时，pitchBendRatio = 2^(100/1200) ≈ 1.0595 (升高半音)
-        const pitchBendRatio = Math.pow(2, cents / 1200);
-        const adjustedFrequency = frequency * pitchBendRatio;
+        // Auto-Tune Logic:
+        // cents 是当前频率相对于最近半音的偏差 (例如 +20 cents)
+        // 如果 autoTuneStrength = 0: 不做修正，直接播放 raw frequency
+        // 如果 autoTuneStrength = 1: 完全修正，移除偏差 (correction = -20 cents)
+        // 混合: correction = -cents * strength
+        
+        const correctionCents = -(cents || 0) * this.autoTuneStrength;
+        const pitchBendRatio = Math.pow(2, correctionCents / 1200);
+        const targetFrequency = frequency * pitchBendRatio;
 
-        // 计算频率偏差
-        const deviation = Math.abs(adjustedFrequency - this.currentFrequency) / this.currentFrequency;
+        // 计算频率偏差 (相对于当前正在播放的频率)
+        const deviation = Math.abs(targetFrequency - this.currentFrequency) / this.currentFrequency;
 
         // 只有明显变化才更新（避免抖动）
         if (deviation > this.frequencyUpdateThreshold) {
@@ -415,8 +431,7 @@ class ContinuousSynthEngine {
 
             // 🔥 [LATENCY FIX] 使用极短的 rampTo 代替直接赋值
             // 0.01s (10ms) 的平滑既能避免爆音，又能保持低延迟
-            // 之前的直接赋值 (frequency.value =) 可能导致点击声
-            this.currentSynth.frequency.rampTo(adjustedFrequency, 0.01);
+            this.currentSynth.frequency.rampTo(targetFrequency, 0.01);
 
             // 性能监控
             const latency = performance.now() - startTime;
@@ -426,12 +441,12 @@ class ContinuousSynthEngine {
                 this.performanceMetrics.updateLatency.shift();
             }
 
-            this.currentFrequency = adjustedFrequency;
+            this.currentFrequency = targetFrequency;
             this.lastUpdateTime = timestamp;
 
             // Debug 日志（仅在 cents 明显时）
-            if (Math.abs(cents) > 15) {
-                console.log(`[ContinuousSynth]  Pitch bend: ${cents.toFixed(1)} cents → ${adjustedFrequency.toFixed(1)} Hz`);
+            if (Math.abs(correctionCents) > 10) {
+                // console.log(`[ContinuousSynth] 🔧 Auto-Tune: Raw ${frequency.toFixed(1)} -> Target ${targetFrequency.toFixed(1)} (Fix: ${correctionCents.toFixed(1)} cents)`);
             }
         }
     }
