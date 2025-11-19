@@ -82,11 +82,20 @@ class KazooApp {
             pitchCanvas: document.getElementById('pitchCanvas'),
 
             // 乐器按钮
-            instrumentBtns: document.querySelectorAll('.instrument-btn')
+            instrumentBtns: document.querySelectorAll('.instrument-btn'),
+
+            // Device Selection
+            audioInputSelect: document.getElementById('audioInputSelect'),
+            audioOutputSelect: document.getElementById('audioOutputSelect'),
+            refreshDevicesBtn: document.getElementById('refreshDevicesBtn')
         };
 
         // 可视化设置
         this.visualizer = null;
+
+        // Device State
+        this.selectedInputId = 'default';
+        this.selectedOutputId = 'default';
     }
 
     /**
@@ -138,6 +147,10 @@ class KazooApp {
         // 初始化可视化
         this.initVisualizer();
 
+        // Populate device list (initial attempt)
+        // Note: Without permission, labels might be empty or list incomplete
+        this._refreshDeviceList();
+
         console.log('App initialized - Ready to play!');
     }
 
@@ -160,6 +173,33 @@ class KazooApp {
         // 开始/停止 - 注意：UIManager 也在绑定这些按钮，检查是否会双重触发
         this.ui.startBtn.addEventListener('click', () => this.start());
         this.ui.stopBtn.addEventListener('click', () => this.stop());
+
+        // Device Selection
+        if (this.ui.audioInputSelect) {
+            this.ui.audioInputSelect.addEventListener('change', (e) => {
+                this.selectedInputId = e.target.value;
+                console.log(`[Main] Input device selected: ${this.selectedInputId}`);
+                // If running, we might need to restart to apply change (simplest approach)
+                // For now, just update state for next start
+            });
+        }
+
+        if (this.ui.audioOutputSelect) {
+            this.ui.audioOutputSelect.addEventListener('change', (e) => {
+                this.selectedOutputId = e.target.value;
+                console.log(`[Main] Output device selected: ${this.selectedOutputId}`);
+                // If running, update immediately
+                if (this.audioIO && this.isRunning) {
+                    this.audioIO.setAudioOutputDevice(this.selectedOutputId);
+                }
+            });
+        }
+
+        if (this.ui.refreshDevicesBtn) {
+            this.ui.refreshDevicesBtn.addEventListener('click', () => {
+                this._refreshDeviceList();
+            });
+        }
 
         //  模式切换
         this.ui.modeToggle.addEventListener('change', (e) => {
@@ -256,6 +296,69 @@ class KazooApp {
     }
 
     /**
+     * Refresh audio device list
+     * Uses a temporary AudioIO instance to enumerate devices
+     */
+    async _refreshDeviceList() {
+        console.log('[Main] Refreshing device list...');
+        
+        // Use temp AudioIO if main one doesn't exist
+        const tempAudioIO = this.audioIO || new AudioIO();
+        
+        try {
+            const { inputs, outputs } = await tempAudioIO.enumerateDevices();
+            
+            // Populate Inputs
+            if (this.ui.audioInputSelect) {
+                const currentVal = this.ui.audioInputSelect.value;
+                this.ui.audioInputSelect.innerHTML = '<option value="default">Default Microphone</option>';
+                
+                inputs.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Microphone ${index + 1} (Label unavailable)`;
+                    this.ui.audioInputSelect.appendChild(option);
+                });
+
+                // Restore selection if possible
+                if (currentVal && [...this.ui.audioInputSelect.options].some(o => o.value === currentVal)) {
+                    this.ui.audioInputSelect.value = currentVal;
+                }
+            }
+
+            // Populate Outputs
+            if (this.ui.audioOutputSelect) {
+                const currentVal = this.ui.audioOutputSelect.value;
+                this.ui.audioOutputSelect.innerHTML = '<option value="default">Default Output</option>';
+                
+                outputs.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Speaker ${index + 1} (Label unavailable)`;
+                    this.ui.audioOutputSelect.appendChild(option);
+                });
+
+                // Restore selection if possible
+                if (currentVal && [...this.ui.audioOutputSelect.options].some(o => o.value === currentVal)) {
+                    this.ui.audioOutputSelect.value = currentVal;
+                }
+            }
+
+            // Update button animation
+            if (this.ui.refreshDevicesBtn) {
+                const icon = this.ui.refreshDevicesBtn.querySelector('svg');
+                if (icon) {
+                    icon.classList.add('animate-spin');
+                    setTimeout(() => icon.classList.remove('animate-spin'), 500);
+                }
+            }
+
+        } catch (error) {
+            console.error('[Main] Failed to refresh devices:', error);
+        }
+    }
+
+    /**
      *  切换引擎模式
      */
     switchMode(useContinuous) {
@@ -334,6 +437,9 @@ class KazooApp {
                 sampleRate: this.config.audio.sampleRate,
                 latencyHint: 'interactive',
                 debug: this.config.performance.enableStats,
+                // Device Selection
+                inputDeviceId: this.selectedInputId,
+                outputDeviceId: this.selectedOutputId,
                 //  P0 修复: 传递完整配置对象,供 AudioIO 序列化并下发到 Worklet
                 appConfig: this.config
             });

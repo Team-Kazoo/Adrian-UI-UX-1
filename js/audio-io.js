@@ -55,6 +55,57 @@ class AudioIO {
     }
 
     /**
+     * 枚举可用的音频设备
+     * @returns {Promise<{inputs: Array, outputs: Array}>}
+     */
+    async enumerateDevices() {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+            console.warn('[AudioIO] 浏览器不支持设备枚举');
+            return { inputs: [], outputs: [] };
+        }
+
+        try {
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const inputs = devices.filter(device => device.kind === 'audioinput');
+            const outputs = devices.filter(device => device.kind === 'audiooutput');
+            
+            console.log(`[AudioIO] 已发现设备: ${inputs.length} 输入, ${outputs.length} 输出`);
+            return { inputs, outputs };
+        } catch (error) {
+            console.error('[AudioIO] 设备枚举失败:', error);
+            return { inputs: [], outputs: [] };
+        }
+    }
+
+    /**
+     * 设置音频输出设备 (Sink ID)
+     * 注意: 仅 Chrome/Edge 支持 setSinkId
+     * @param {string} deviceId 
+     */
+    async setAudioOutputDevice(deviceId) {
+        if (!this.audioContext) return;
+        
+        // 尝试在 AudioContext 的 destination 上设置 sinkId (Web Audio API v2)
+        // 或者在 HTMLAudioElement 上设置 (如果是流式播放)
+        
+        try {
+            // 方法 1: AudioContext.setSinkId (实验性特性)
+            if (typeof this.audioContext.setSinkId === 'function') {
+                await this.audioContext.setSinkId(deviceId);
+                console.log(`[AudioIO] AudioContext 输出已切换至: ${deviceId}`);
+            } 
+            // 方法 2: 检查 Tone.js 的处理 (因为应用使用 Tone.js 输出)
+            // Tone.js 通常包装了 audioContext.destination，目前不直接支持 setSinkId 穿透
+            // 但如果我们设置了 audioContext.setSinkId，Tone.js 应该会自动跟随
+            else {
+                console.warn('[AudioIO] 当前浏览器不支持 AudioContext.setSinkId，无法切换输出设备');
+            }
+        } catch (error) {
+            console.error('[AudioIO] 设置输出设备失败:', error);
+        }
+    }
+
+    /**
      * 配置音频系统
      * @param {Object} options - 配置选项
      * @param {number} options.sampleRate - 采样率
@@ -62,6 +113,8 @@ class AudioIO {
      * @param {number} options.workletBufferSize - 缓冲大小 (AudioWorklet)
      * @param {boolean} options.useWorklet - 是否使用 AudioWorklet
      * @param {string} options.latencyHint - 延迟提示
+     * @param {string} options.inputDeviceId - 输入设备 ID
+     * @param {string} options.outputDeviceId - 输出设备 ID
      * @param {Object} options.appConfig: 集中式配置对象 (来自 configManager)
      */
     configure(options = {}) {
@@ -102,8 +155,13 @@ class AudioIO {
             // 1. 初始化 AudioContext
             await this._initializeAudioContext();
 
-            // 2. 请求麦克风权限
-            await this._requestMicrophone();
+            // 1.5 如果配置了输出设备，尝试设置
+            if (this.config.outputDeviceId && this.config.outputDeviceId !== 'default') {
+                await this.setAudioOutputDevice(this.config.outputDeviceId);
+            }
+
+            // 2. 请求麦克风权限 (传入配置的 inputDeviceId)
+            await this._requestMicrophone(this.config.inputDeviceId);
 
             // 3. 决定使用哪种处理模式
             const useWorklet = this.config.useWorklet && this._supportsAudioWorklet();
@@ -416,10 +474,11 @@ class AudioIO {
 
     /**
      * 请求麦克风权限
+     * @param {string|null} deviceId - 指定的输入设备 ID
      * @private
      * @throws {Error} 麦克风访问失败时抛出详细错误
      */
-    async _requestMicrophone() {
+    async _requestMicrophone(deviceId = null) {
         // 检查浏览器支持
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
             throw new Error(
@@ -430,10 +489,10 @@ class AudioIO {
             );
         }
 
-        console.log('🎤 请求麦克风权限...');
+        console.log(`🎤 请求麦克风权限... (DeviceID: ${deviceId || 'Default'})`);
 
         try {
-            this.stream = await navigator.mediaDevices.getUserMedia({
+            const constraints = {
                 audio: {
                     echoCancellation: false,
                     noiseSuppression: false,
@@ -441,7 +500,14 @@ class AudioIO {
                     latency: 0
                 },
                 video: false
-            });
+            };
+
+            // 如果指定了设备 ID，强制使用该设备
+            if (deviceId && deviceId !== 'default') {
+                constraints.audio.deviceId = { exact: deviceId };
+            }
+
+            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
         } catch (error) {
             // 根据错误类型提供友好提示
             if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
@@ -472,16 +538,15 @@ class AudioIO {
                 // 降级尝试：使用更宽松的约束
                 console.warn('[AudioIO] 麦克风约束过严，尝试降级配置...');
                 try {
-                    this.stream = await navigator.mediaDevices.getUserMedia({
-                        audio: true  // 使用默认配置
-                    });
-                    console.log(' 使用降级配置成功获取麦克风');
+                    // 移除 deviceId 约束，尝试使用默认设备
+                    const fallbackConstraints = { audio: true };
+                    this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                    console.log(' 使用降级配置(默认设备)成功获取麦克风');
                 } catch (fallbackError) {
                     throw new Error(
                         '麦克风不支持所需的音频配置\n\n' +
-                        '您的麦克风可能不支持低延迟模式，请尝试:\n' +
-                        '• 使用其他麦克风\n' +
-                        '• 更新麦克风驱动程序'
+                        '您的麦克风可能不支持低延迟模式，或者指定的设备不可用。\n' +
+                        '请尝试刷新页面或选择默认设备。'
                     );
                 }
             } else {
