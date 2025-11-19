@@ -260,6 +260,10 @@ class ContinuousSynthEngine {
             portamento: preset.portamento  // 关键：内置滑音
         });
 
+        // 初始音量设为静音，防止 start() 时的瞬时爆音
+        // 真正的音量由 updateVolume() 动态控制
+        this.currentSynth.volume.value = -60;
+
         // 连接到效果器链
         this.currentSynth.connect(this.vibrato);
 
@@ -313,6 +317,9 @@ class ContinuousSynthEngine {
 
                 // Task 3: Breathiness → Noise Layer
                 this.updateBreathiness(breathiness, frequency);
+
+                // Task 5: Volume → Continuous Gain Control (New!)
+                this.updateVolume(volumeLinear);
             }
         } else {
             // 无效音高：不立即停止，等待silenceDetection超时
@@ -357,7 +364,14 @@ class ContinuousSynthEngine {
     start(initialFrequency, volume = 0.5) {
         try {
             const now = Tone.now();
-            const velocity = Math.min(Math.max(volume * 2, 0.1), 1);
+            
+            // 🔥 [CONTINUOUS CONTROL FIX]
+            // 使用固定 Velocity 1.0，将动态完全交给 Volume 控制
+            // 避免 Envelope Velocity 锁定导致的 "响度上限" 问题
+            const velocity = 1.0;
+
+            // 立即更新目标音量 (从 -60dB 平滑上升)
+            this.updateVolume(volume);
 
             // 触发包络启动（但不指定音符名称）
             // 使用频率直接设置
@@ -505,6 +519,56 @@ class ContinuousSynthEngine {
     }
 
     /**
+     * Task 5: 连续音量控制 (Continuous Volume Control)
+     * 
+     * 将输入的 RMS 音量映射到合成器的输出增益 (dB)
+     * 解决 "响度不变" 和 "突变" 的问题
+     * 
+     * @param {number} inputVolume - 输入线性音量 (RMS, 0.0 - 1.0)
+     */
+    updateVolume(inputVolume) {
+        if (inputVolume === undefined || inputVolume === null) return;
+
+        // 1. 定义动态范围 (Dynamic Range)
+        // 麦克风输入的有效范围通常很小，需要扩展
+        const minInput = 0.01;  // 底噪/静音阈值
+        const maxInput = 0.20;  // 最大歌唱音量 (根据经验值，可后续改为自动校准)
+        
+        const minOutputDb = -30; // 最低有效音量 (不建议太低，否则听不清)
+        const maxOutputDb = 0;   // 最大音量 (0dB)
+
+        // 2. 归一化与钳位 (Normalize & Clamp)
+        let normalized = (inputVolume - minInput) / (maxInput - minInput);
+        normalized = Math.max(0, Math.min(1, normalized));
+
+        // 3. 映射曲线 (Transfer Function)
+        // 使用指数曲线 (Power Law) 增加动态感
+        // curve = 1.0: 线性映射
+        // curve > 1.0: 扩展 (低音更低，高音更高，增加对比度)
+        // curve < 1.0: 压缩 (提升细节)
+        const curve = 1.5; 
+        const mappedLinear = Math.pow(normalized, curve);
+
+        // 4. 转换为 dB
+        let targetDb = minOutputDb + mappedLinear * (maxOutputDb - minOutputDb);
+
+        // 特殊处理：如果输入极小，快速衰减到静音，防止背景噪音
+        if (inputVolume < minInput) {
+             targetDb = -60;
+        }
+
+        // 5. 平滑更新 (Smoothing)
+        // 使用 rampTo 防止爆音 (Zipper Noise)
+        // 0.05s (50ms) 提供了灵敏的响应，同时足够平滑
+        if (this.currentSynth && this.currentSynth.volume) {
+            this.currentSynth.volume.rampTo(targetDb, 0.05);
+        }
+        
+        // Debug 日志 (仅在音量大幅变化时)
+        // if (Math.random() < 0.01) console.log(`Vol: ${inputVolume.toFixed(3)} -> ${targetDb.toFixed(1)} dB`);
+    }
+
+    /**
      * Task 4: 处理 articulation 状态转换，触发 ADSR
      *
      * @param {string} articulation - 当前起音状态 ('attack'|'sustain'|'release'|'silence')
@@ -531,7 +595,9 @@ class ContinuousSynthEngine {
                 this.startSilenceDetection();
             } else {
                 // 重新触发 attack (retriggering)
-                this.currentSynth.triggerAttack(frequency, Tone.now(), volume || 0.5);
+                // 同样使用 velocity 1.0
+                this.updateVolume(volume || 0.5);
+                this.currentSynth.triggerAttack(frequency, Tone.now(), 1.0);
             }
         }
 
