@@ -13,6 +13,7 @@ import { checkBrowserSupport, calculateRMS } from './utils/audio-utils.js';
 import { AppContainer } from './core/app-container.js';
 import { ExpressiveFeatures } from './expressive-features.js';
 import instrumentPresetManager from './config/instrument-presets.js';
+import UIManager from './managers/ui-manager.js';
 
 class KazooApp {
     /**
@@ -22,6 +23,7 @@ class KazooApp {
      * @param {Object} services.configManager - 配置管理器
      * @param {Object} services.pitchDetector - 音高检测器
      * @param {Object} services.performanceMonitor - 性能监控器
+     * @param {Object} services.uiManager - UI 管理器
      * @param {Object} services.synthesizerEngine - Legacy 合成器引擎
      * @param {Object} services.continuousSynthEngine - Continuous 合成器引擎
      * @param {Function} services.ExpressiveFeatures - 表现力特征提取类
@@ -34,6 +36,7 @@ class KazooApp {
         this.configManager = services.configManager || null;
         this.pitchDetector = services.pitchDetector || null;
         this.performanceMonitor = services.performanceMonitor || null;
+        this.uiManager = services.uiManager || null;
         this.synthesizerEngine = services.synthesizerEngine || null;
         this.continuousSynthEngine = services.continuousSynthEngine || null;
         this.ExpressiveFeatures = services.ExpressiveFeatures || null;
@@ -145,6 +148,11 @@ class KazooApp {
 
         // 检查兼容性
         this.checkCompatibility();
+        
+        // 初始化 UIManager (如果已注入)
+        if (this.uiManager) {
+            this.uiManager.initialize();
+        }
 
         // 绑定事件
         this.bindEvents();
@@ -824,17 +832,9 @@ class KazooApp {
         // Update Auto-Tune Tuner Display
         if (this.currentEngine && this.currentEngine.getCorrectionInfo) {
              const info = this.currentEngine.getCorrectionInfo();
-             if (info && this.ui.tunerDisplay && !this.ui.tunerDisplay.classList.contains('hidden')) {
-                  if (this.ui.tunerInput) this.ui.tunerInput.textContent = `${info.inputNote}${info.inputOctave}`;
-                  if (this.ui.tunerTarget) this.ui.tunerTarget.textContent = `${info.note}${info.octave}`;
-                  if (this.ui.tunerCents && info.inputCents !== undefined) {
-                      const displayCents = info.inputCents;
-                      const sign = displayCents >= 0 ? '+' : '';
-                      this.ui.tunerCents.textContent = `(${sign}${displayCents.toFixed(0)}¢)`;
-                      this.ui.tunerCents.className = Math.abs(displayCents) < 10 
-                          ? 'text-[10px] ml-2 text-green-500 font-bold' 
-                          : 'text-[10px] ml-2 text-gray-400';
-                  }
+             // Delegate to UIManager to avoid duplication
+             if (this.uiManager) {
+                 this.uiManager.updateTunerDisplay(info);
              }
         }
 
@@ -1059,6 +1059,18 @@ container.register('performanceMonitor', () => {
     singleton: true
 });
 
+// 6.5 UI管理器 (New Feature)
+container.register('uiManager', () => {
+    console.log('[Container]  创建 UIManager 实例...');
+    const ui = new UIManager();
+    // 需要初始化以缓存元素
+    // ui.initialize() 最好在 DOMReady 后调用，或者现在调用如果 DOM 已经存在
+    // 由于 AppContainer 在 DOMContentLoaded 前执行，我们让 KazooApp 来负责初始化它
+    return ui;
+}, {
+    singleton: true
+});
+
 // 7. 合成器引擎 - Legacy (Step 2 Layer 2: 容器创建新实例)
 container.register('synthesizerEngine', () => {
     console.log('[Container]  创建 SynthesizerEngine (Legacy) 实例...');
@@ -1096,6 +1108,7 @@ container.register('app', (c) => {
         configManager: c.get('configManager'),
         pitchDetector: c.get('pitchDetector'),
         performanceMonitor: c.get('performanceMonitor'),
+        uiManager: c.get('uiManager'),
         synthesizerEngine: c.get('synthesizerEngine'),
         continuousSynthEngine: c.get('continuousSynthEngine'),
         ExpressiveFeatures: c.get('ExpressiveFeatures')
@@ -1105,7 +1118,7 @@ container.register('app', (c) => {
     return new KazooApp(services);
 }, {
     singleton: true,
-    dependencies: ['config', 'configManager', 'pitchDetector', 'performanceMonitor',
+    dependencies: ['config', 'configManager', 'pitchDetector', 'performanceMonitor', 'uiManager',
                    'synthesizerEngine', 'continuousSynthEngine', 'ExpressiveFeatures']
 });
 
