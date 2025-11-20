@@ -100,7 +100,7 @@
             cursor: pointer;
             top: 0; left: 0; right: 0; bottom: 0;
             background-color: #e5e5e7;
-            transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: background-color 0.2s;
             border-radius: 31px;
         }
         .toggle-slider:before {
@@ -111,29 +111,13 @@
             left: 2px;
             bottom: 2px;
             background-color: white;
-            transition: .4s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: transform 0.2s;
             border-radius: 50%;
             box-shadow: 0 3px 8px rgba(0,0,0,0.15), 0 1px 1px rgba(0,0,0,0.16);
         }
         input:checked + .toggle-slider { background-color: #34C759; }
         input:checked + .toggle-slider:before {
             transform: translateX(20px);  /* 51px - 4px(padding) - 27px(circle) = 20px */
-        }
-
-        /* AI Pulse Animation */
-        @keyframes ai-pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        .ai-pulse { animation: ai-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-
-        /* Modal Slide In */
-        .modal-enter {
-            animation: slideIn 0.3s ease-out forwards;
-        }
-        @keyframes slideIn {
-            from { transform: translateX(100%); }
-            to { transform: translateX(0); }
         }
 
         /* Google Font Helper */
@@ -199,7 +183,7 @@
 
                 <!-- Settings Button (Larger) -->
                 <button id="settingsBtn" class="relative flex items-center gap-2 bg-white/80 hover:bg-white backdrop-blur-md border border-black/5 shadow-sm px-4 py-2 rounded-full transition-all duration-200 group">
-                    <svg class="w-5 h-5 text-gray-600 group-hover:rotate-90 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-5 h-5 text-gray-600 group-hover:rotate-90  duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
                     </svg>
@@ -213,7 +197,7 @@
     <div id="settingsModal" class="fixed inset-0 z-[100] hidden">
         <div class="absolute inset-0 bg-black/30 backdrop-blur-md transition-opacity" id="settingsBackdrop"></div>
 
-        <div class="absolute right-0 top-0 bottom-0 w-full max-w-2xl glass-dark p-0 overflow-y-auto transform translate-x-full transition-transform duration-300 ease-out" id="settingsPanel">
+        <div class="absolute right-0 top-0 bottom-0 w-full max-w-2xl glass-dark p-0 overflow-y-auto transform translate-x-full  duration-300 ease-out" id="settingsPanel">
             <div class="sticky top-0 z-20 glass-dark border-b border-white/10 px-8 py-6">
                 <div class="flex items-center justify-between">
                     <div>
@@ -385,7 +369,7 @@
             <section class="text-center mb-20">
                 <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 text-blue-600 text-[11px] font-bold tracking-wide uppercase mb-6 shadow-sm">
                     <span class="relative flex h-2 w-2">
-                      <span class="ai-pulse absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                      <span class="absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
                       <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
                     </span>
                     Neural Audio Engine • Web-Native
@@ -418,7 +402,7 @@
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
                                 <!-- Local Image Background -->
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/flute.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/flute.jpg')"></div>
 
                                 <!-- Gradient Overlay -->
                                 <div class="absolute inset-0 bg-gradient-to-br from-purple-500/70 via-purple-600/60 to-indigo-600/70 transition-opacity duration-300 group-hover:opacity-80"></div>
@@ -451,7 +435,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="clarinet">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/clarinet.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/clarinet.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-pink-400/70 via-rose-500/60 to-red-500/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -480,7 +464,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="dizi">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/dizi.png')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/dizi.png')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-cyan-400/70 via-sky-500/60 to-blue-500/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -509,7 +493,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="soprano_sax">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/soprano_sax.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/soprano_sax.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-emerald-400/70 via-teal-500/60 to-cyan-500/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -538,7 +522,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="alto_sax">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/alto_sax.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/alto_sax.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-pink-400/70 via-rose-400/60 to-yellow-400/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -567,7 +551,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="trumpet">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/trumpet.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/trumpet.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-orange-400/70 via-amber-500/60 to-yellow-500/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -596,7 +580,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="trombone">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/trombone.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/trombone.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-teal-300/70 via-cyan-400/60 to-pink-400/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -623,7 +607,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="suona">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/suona.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/suona.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-orange-500/70 via-red-500/60 to-pink-600/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -651,7 +635,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="violin">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/violin.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/violin.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-red-400/70 via-pink-500/60 to-rose-600/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -678,7 +662,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="cello">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/cello.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/cello.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-purple-600/70 via-indigo-700/60 to-blue-800/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -706,7 +690,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="erhu">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/erhu.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/erhu.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-rose-300/70 via-slate-400/60 to-cyan-400/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -734,7 +718,7 @@
                         <button class="instrument-btn group relative w-full text-left focus:outline-none" data-instrument="harmonica">
                             <div class="card-border-gradient"></div>
                             <div class="card-inner h-36 rounded-[20px] overflow-hidden relative">
-                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 group-hover:scale-105" style="background-image: url('images/instruments/harmonica.jpg')"></div>
+                                <div class="absolute inset-0 bg-cover bg-center transition-all duration-300 " style="background-image: url('images/instruments/harmonica.jpg')"></div>
                                 <div class="absolute inset-0 bg-gradient-to-br from-teal-400/70 via-cyan-500/60 to-purple-500/70 transition-opacity duration-300 group-hover:opacity-80"></div>
                                 <div class="absolute inset-0 bg-white/30 group-[.active]:bg-white/20 transition-colors"></div>
 
@@ -784,12 +768,12 @@
                         </div>
 
                         <div class="mt-8 relative">
-                            <button id="startBtn" class="w-full h-14 bg-black hover:bg-gray-900 text-white text-[15px] font-semibold rounded-full shadow-lg flex items-center justify-center gap-2 transform active:scale-[0.98] transition-transform">
+                            <button id="startBtn" class="w-full h-14 bg-black hover:bg-gray-900 text-white text-[15px] font-semibold rounded-full shadow-lg flex items-center justify-center gap-2 transition-colors">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
                                 Start Engine
                             </button>
 
-                            <button id="stopBtn" class="hidden w-full h-14 bg-red-500 hover:bg-red-600 text-white text-[15px] font-semibold rounded-full shadow-lg flex items-center justify-center gap-2 transform active:scale-[0.98] transition-transform">
+                            <button id="stopBtn" class="hidden w-full h-14 bg-red-500 hover:bg-red-600 text-white text-[15px] font-semibold rounded-full shadow-lg flex items-center justify-center gap-2 transition-colors">
                                 <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M6 6h12v12H6z"/></svg>
                                 Stop Session
                             </button>
@@ -849,7 +833,7 @@
                     <!-- Buttons -->
                     <div class="flex flex-col sm:flex-row items-center justify-center gap-4 text-base md:text-lg">
                         <!-- Primary Button (Dark) -->
-                        <button class="flex items-center gap-3 bg-[#1D1D1F] text-white px-9 py-4 rounded-full font-semibold tracking-wide hover:bg-black hover:scale-[1.03] transition-all duration-300 shadow-xl uppercase text-[13px]">
+                        <button class="flex items-center gap-3 bg-[#1D1D1F] text-white px-9 py-4 rounded-full font-semibold tracking-wide hover:bg-black  transition-all duration-300 shadow-xl uppercase text-[13px]">
                             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6" d="M12 3v12m0 0l-4-4m4 4l4-4M4 15h16m-9 6h2"/></svg>
                             Join Hardware Pilot
                         </button>

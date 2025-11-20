@@ -152,7 +152,7 @@ a:hover {
 }
 
 .start-cta:hover {
-    transform: translateY(-2px) scale(1.01);
+    /* transform removed */
 }
 
 .start-cta:active {
@@ -166,7 +166,7 @@ a:hover {
 }
 
 .stop-cta:hover {
-    transform: translateY(-1px) scale(1.01);
+    /* transform removed */
 }
 
 .helper-text {
@@ -272,16 +272,10 @@ a:hover {
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: fadeIn 0.3s;
 }
 
 .modal-overlay.show {
     display: flex;
-}
-
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
 }
 
 .modal {
@@ -291,12 +285,6 @@ a:hover {
     max-width: 500px;
     width: 90%;
     box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-    animation: slideUp 0.3s;
-}
-
-@keyframes slideUp {
-    from { transform: translateY(20px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
 }
 
 .modal-step-indicator {
@@ -337,14 +325,7 @@ a:hover {
 }
 
 /* Custom Animations */
-@keyframes pulse-slow {
-    0%, 100% {
-        opacity: 1;
-    }
-    50% {
-        opacity: 0.7;
-    }
-}
+/* pulse-slow removed */
 
 /* Accessibility - Reduce Motion */
 @media (prefers-reduced-motion: reduce) {
