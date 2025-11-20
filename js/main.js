@@ -762,6 +762,20 @@ class KazooApp {
         try {
             console.log(`Starting Kazoo Proto in ${this.useContinuousMode ? 'Continuous' : 'Legacy'} mode...`);
 
+            // 🔥 [CRITICAL FIX] Force sync device selection from UI before starting
+            // This handles cases where the user changed selection *before* clicking Start
+            if (this.ui.audioInputSelect && this.ui.audioInputSelect.value) {
+                this.selectedInputId = this.ui.audioInputSelect.value;
+            }
+            if (this.ui.audioOutputSelect && this.ui.audioOutputSelect.value) {
+                this.selectedOutputId = this.ui.audioOutputSelect.value;
+            }
+            
+            console.log('[Main] Starting with devices:', {
+                input: this.selectedInputId,
+                output: this.selectedOutputId
+            });
+
             //  启动音频系统（仅 AudioIO）
             await this._startWithAudioIO();
 

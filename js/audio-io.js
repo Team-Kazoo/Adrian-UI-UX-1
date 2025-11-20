@@ -489,75 +489,48 @@ class AudioIO {
             );
         }
 
-        console.log(`🎤 请求麦克风权限... (DeviceID: ${deviceId || 'Default'})`);
+        console.log(`🎤 请求麦克风权限... (Target DeviceID: ${deviceId || 'Default'})`);
 
+        // 1. 准备音频约束 (理想配置: 低延迟, 无处理)
+        const idealConstraints = {
+            audio: {
+                echoCancellation: false,
+                noiseSuppression: false,
+                autoGainControl: false,
+                latency: 0
+            },
+            video: false
+        };
+
+        // 2. 应用设备 ID
+        if (deviceId && deviceId !== 'default') {
+            idealConstraints.audio.deviceId = { exact: deviceId };
+        }
+
+        // 3. 尝试获取流 (带自动降级重试)
         try {
-            const constraints = {
-                audio: {
-                    echoCancellation: false,
-                    noiseSuppression: false,
-                    autoGainControl: false,
-                    latency: 0
-                },
+            console.log('[AudioIO] 尝试理想音频配置:', JSON.stringify(idealConstraints.audio));
+            this.stream = await navigator.mediaDevices.getUserMedia(idealConstraints);
+        } catch (error) {
+            console.warn('[AudioIO] 理想配置失败，尝试降级配置...', error.name);
+
+            // 降级策略: 移除所有高级音频处理约束, 仅保留 deviceId (如果存在)
+            const fallbackConstraints = {
+                audio: true,
                 video: false
             };
 
-            // 如果指定了设备 ID，强制使用该设备
             if (deviceId && deviceId !== 'default') {
-                constraints.audio.deviceId = { exact: deviceId };
+                fallbackConstraints.audio = { deviceId: { exact: deviceId } };
             }
 
-            this.stream = await navigator.mediaDevices.getUserMedia(constraints);
-        } catch (error) {
-            // 根据错误类型提供友好提示
-            if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
-                throw new Error(
-                    '麦克风权限被拒绝\n\n' +
-                    '请允许浏览器访问麦克风:\n' +
-                    '• Chrome: 点击地址栏的 🔒 图标 → 网站设置 → 麦克风\n' +
-                    '• Firefox: 点击地址栏的 🔒 图标 → 权限 → 使用麦克风\n' +
-                    '• Safari: Safari 菜单 → 设置 → 网站 → 麦克风'
-                );
-            } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
-                throw new Error(
-                    '未找到麦克风设备\n\n' +
-                    '请确认:\n' +
-                    '• 麦克风已正确连接\n' +
-                    '• 系统设置中麦克风未被禁用\n' +
-                    '• 麦克风未被其他应用占用'
-                );
-            } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
-                throw new Error(
-                    '无法读取麦克风数据\n\n' +
-                    '可能原因:\n' +
-                    '• 麦克风正被其他应用使用\n' +
-                    '• 麦克风驱动异常\n' +
-                    '• 请尝试重新连接麦克风或重启浏览器'
-                );
-            } else if (error.name === 'OverconstrainedError' || error.name === 'ConstraintNotSatisfiedError') {
-                // 降级尝试：使用更宽松的约束
-                console.warn('[AudioIO] 麦克风约束过严，尝试降级配置...');
-                try {
-                    // 移除 deviceId 约束，尝试使用默认设备
-                    const fallbackConstraints = { audio: true };
-                    this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
-                    console.log(' 使用降级配置(默认设备)成功获取麦克风');
-                } catch (fallbackError) {
-                    throw new Error(
-                        '麦克风不支持所需的音频配置\n\n' +
-                        '您的麦克风可能不支持低延迟模式，或者指定的设备不可用。\n' +
-                        '请尝试刷新页面或选择默认设备。'
-                    );
-                }
-            } else {
-                // 未知错误
-                throw new Error(
-                    `无法访问麦克风: ${error.message}\n\n` +
-                    '请尝试:\n' +
-                    '• 刷新页面重试\n' +
-                    '• 检查浏览器控制台获取详细错误信息\n' +
-                    '• 使用其他浏览器'
-                );
+            try {
+                console.log('[AudioIO] 尝试安全(回退)配置:', JSON.stringify(fallbackConstraints.audio));
+                this.stream = await navigator.mediaDevices.getUserMedia(fallbackConstraints);
+                console.warn('[AudioIO]  已使用降级配置启动 (可能存在回声或延迟)');
+            } catch (fallbackError) {
+                // 错误处理 (保持原有逻辑)
+                this._handleGetUserMediaError(fallbackError);
             }
         }
 
@@ -570,7 +543,36 @@ class AudioIO {
         this.sourceNode = this.audioContext.createMediaStreamSource(this.stream);
 
         const track = this.stream.getAudioTracks()[0];
-        console.log(' 麦克风已连接:', track.label || '默认设备');
+        const label = track.label || '默认设备';
+        console.log(` 麦克风已连接: ${label} (State: ${track.readyState})`);
+        
+        // 双重检查: 轨道是否静音?
+        if (track.muted) {
+            console.warn('⚠️ 警告: 音频轨道处于 muted 状态 (可能是系统隐私设置拦截)');
+        }
+    }
+
+    /**
+     * 统一错误处理 helper
+     */
+    _handleGetUserMediaError(error) {
+        if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+            throw new Error(
+                '麦克风权限被拒绝\n\n' +
+                '请允许浏览器访问麦克风:\n' +
+                '• Chrome: 点击地址栏的 🔒 图标 → 网站设置 → 麦克风\n' +
+                '• Firefox: 点击地址栏的 🔒 图标 → 权限 → 使用麦克风\n' +
+                '• Safari: Safari 菜单 → 设置 → 网站 → 麦克风'
+            );
+        } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+            throw new Error('未找到指定的麦克风设备。');
+        } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+            throw new Error('无法读取麦克风数据 (设备可能被占用或硬件错误)。');
+        } else if (error.name === 'OverconstrainedError') {
+            throw new Error('麦克风不支持请求的配置 (采样率或设备ID无效)。');
+        } else {
+            throw new Error(`无法访问麦克风: ${error.message}`);
+        }
     }
 
     /**
