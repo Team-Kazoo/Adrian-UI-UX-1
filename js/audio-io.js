@@ -664,14 +664,28 @@ class AudioIO {
                 // 使用 Worklet 提供的精确 timestamp (AudioContext.currentTime * 1000)
                 const frameTimestamp = timestamp || performance.now();
 
+                // 调试：首次收到 pitch-frame 时打印
+                if (!this._firstPitchFrameLogged) {
+                    console.log('[AudioIO] ✅ 首次收到 pitch-frame:', {
+                        frequency: data.frequency,
+                        note: data.note,
+                        octave: data.octave,
+                        confidence: data.confidence,
+                        volume: data.volumeLinear
+                    });
+                    this._firstPitchFrameLogged = true;
+                }
+
                 // Worklet 模式: 单一数据出口，避免重复处理
                 if (this.onWorkletPitchFrameCallback) {
                     // 专用回调优先 (推荐)
                     this.onWorkletPitchFrameCallback(data, frameTimestamp);
                 } else if (this.onFrameCallback) {
                     // Fallback: 如果未注册专用回调，使用通用 onFrame
-                    console.warn('[AudioIO]  pitch-frame 未注册专用回调，使用 onFrame fallback');
+                    console.warn('[AudioIO] ⚠️ pitch-frame 未注册专用回调，使用 onFrame fallback');
                     this.onFrameCallback(data, frameTimestamp);
+                } else {
+                    console.error('[AudioIO] ❌ pitch-frame 没有注册任何回调函数！');
                 }
                 // 注意: 不再触发 onPitchDetectedCallback，避免双重处理
 
@@ -683,6 +697,15 @@ class AudioIO {
                 if (this.config.debug && data) {
                     console.log('[AudioIO] 未检测到音高, 音量:', data.volume);
                 }
+                break;
+
+            case 'volume-too-low':
+                // 音量太低，无法检测音高
+                console.warn('[AudioIO] ⚠️ 音量过低:', {
+                    volume: data.volume,
+                    threshold: data.threshold,
+                    tip: '请靠近麦克风或提高音量'
+                });
                 break;
 
             case 'test-ping':

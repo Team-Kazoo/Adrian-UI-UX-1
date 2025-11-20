@@ -1318,7 +1318,13 @@ class KazooApp {
      * @param {number} timestamp - 时间戳 (ms)
      */
     handleWorkletPitchFrame(pitchFrame, timestamp, receiveTime) {
-        if (!this.isRunning || !this.currentEngine) return;
+        if (!this.isRunning || !this.currentEngine) {
+            console.warn('[Main] ⚠️ handleWorkletPitchFrame 被调用但应用未运行或引擎未初始化:', {
+                isRunning: this.isRunning,
+                hasEngine: !!this.currentEngine
+            });
+            return;
+        }
 
         // Measure end-to-end latency
         if (receiveTime && pitchFrame.captureTime) {
@@ -1331,8 +1337,12 @@ class KazooApp {
 
         // 调试: 首次调用时打印完整 PitchFrame
         if (!this._workletPitchFrameLogged) {
-            console.log('[Main] handleWorkletPitchFrame 首次调用:', {
-                pitchFrame,
+            console.log('[Main] ✅ handleWorkletPitchFrame 首次调用:', {
+                frequency: pitchFrame.frequency,
+                note: pitchFrame.note,
+                octave: pitchFrame.octave,
+                confidence: pitchFrame.confidence,
+                volume: pitchFrame.volumeLinear,
                 timestamp,
                 fields: Object.keys(pitchFrame)
             });

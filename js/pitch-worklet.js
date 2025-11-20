@@ -248,8 +248,14 @@ class PitchDetectorWorklet extends AudioWorkletProcessor {
             minFrequency: 80,
             maxFrequency: 800,
             smoothingSize: 5,
-            minVolumeThreshold: 0.001
+            minVolumeThreshold: 0.0001  // 🔥 降低默认阈值，适配低音量设备（如 RPi）
         };
+        
+        console.log('[PitchWorklet] 初始配置:', {
+            minVolumeThreshold: this.config.minVolumeThreshold,
+            minFrequency: this.config.minFrequency,
+            maxFrequency: this.config.maxFrequency
+        });
 
         this.detector = this._createYINDetector(this.config);
         this.pitchHistory = [];
@@ -414,12 +420,18 @@ class PitchDetectorWorklet extends AudioWorkletProcessor {
                         this.port.postMessage({ type: 'no-pitch', data: { volume } });
                     }
                 } else {
-                    // Debug: Volume too low
+                    // Debug: Volume too low - 更频繁地报告以帮助诊断
                     this.lowVolumeFrameCount = (this.lowVolumeFrameCount || 0) + 1;
-                    if (this.lowVolumeFrameCount % 100 === 0) {
+                    // RPi 调试：每 10 帧报告一次（更频繁）
+                    const reportInterval = this.lowVolumeFrameCount < 50 ? 10 : 100;
+                    if (this.lowVolumeFrameCount % reportInterval === 0) {
                         this.port.postMessage({ 
                             type: 'volume-too-low', 
-                            data: { volume: volume.toFixed(6), threshold: this.config.minVolumeThreshold } 
+                            data: { 
+                                volume: volume.toFixed(6), 
+                                threshold: this.config.minVolumeThreshold,
+                                frameCount: this.lowVolumeFrameCount
+                            } 
                         });
                     }
                 }
@@ -444,9 +456,20 @@ class PitchDetectorWorklet extends AudioWorkletProcessor {
     _handleMessage(event) {
         const { type, data } = event.data;
         if (type === 'config') {
+            console.log('[PitchWorklet] 收到配置更新:', {
+                minVolumeThreshold: data.minVolumeThreshold,
+                minFrequency: data.minFrequency,
+                maxFrequency: data.maxFrequency,
+                clarityThreshold: data.clarityThreshold
+            });
             this.config = { ...this.config, ...data };
             if (this.volumeFilter && data.volumeAlpha) this.volumeFilter.alpha = data.volumeAlpha;
             if (this.brightnessFilter && data.brightnessAlpha) this.brightnessFilter.alpha = data.brightnessAlpha;
+            console.log('[PitchWorklet] 配置已应用:', {
+                minVolumeThreshold: this.config.minVolumeThreshold,
+                minFrequency: this.config.minFrequency,
+                maxFrequency: this.config.maxFrequency
+            });
             this.port.postMessage({ type: 'config-applied', config: this.config });
         }
     }
