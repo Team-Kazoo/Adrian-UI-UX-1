@@ -82,6 +82,18 @@
  */
 
 /**
+ * @typedef {Object} VisualizerConfig
+ * @property {number} minMidi - 最小 MIDI 音符
+ * @property {number} maxMidi - 最大 MIDI 音符
+ * @property {number} maxHistory - 历史记录长度
+ * @property {string} gridColor - 网格颜色
+ * @property {string} cNoteColor - C 音符网格颜色
+ * @property {string} activeNoteRowColor - 活动音符行高亮颜色
+ * @property {string} font - 字体样式
+ * @property {string} labelColor - 标签颜色
+ */
+
+/**
  * @typedef {Object} AppConfigSchema
  * @property {AudioEngineConfig} audio - 音频引擎配置
  * @property {PitchDetectorConfig} pitchDetector - 音高检测配置
@@ -89,6 +101,7 @@
  * @property {OnsetDetectorConfig} onset - 起音检测配置
  * @property {SpectralFeaturesConfig} spectral - 频域特征配置
  * @property {SynthesizerConfig} synthesizer - 合成器配置
+ * @property {VisualizerConfig} visualizer - 可视化配置
  * @property {PerformanceConfig} performance - 性能与调试配置
  */
 
@@ -179,6 +192,20 @@ const DEFAULT_CONFIG = {
       max: 8000                  // Filter Cutoff 最大值 (Hz)
     },
     noiseGainMax: 0.3            // 噪声增益最大值 (气声效果强度)
+  },
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 可视化配置 (Visualizer Configuration)
+  // ─────────────────────────────────────────────────────────────────────────
+  visualizer: {
+    minMidi: 40,                 // E2 (82Hz)
+    maxMidi: 84,                 // C6 (1047Hz)
+    maxHistory: 300,             // 约 5 秒 @ 60fps
+    gridColor: 'rgba(255, 255, 255, 0.05)',
+    cNoteColor: 'rgba(255, 255, 255, 0.15)',
+    activeNoteRowColor: 'rgba(66, 133, 244, 0.15)',
+    font: '10px Inter, sans-serif',
+    labelColor: 'rgba(255, 255, 255, 0.4)'
   },
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -393,6 +420,14 @@ function validateConfig(config) {
 
     if (fftInterval && fftInterval < 1) {
       errors.push(`fftInterval 必须 >= 1 (当前: ${fftInterval})`);
+    }
+  }
+
+  // 验证可视化配置
+  if (config.visualizer) {
+    const { minMidi, maxMidi } = config.visualizer;
+    if (minMidi !== undefined && maxMidi !== undefined && minMidi >= maxMidi) {
+      errors.push(`Visualizer minMidi (${minMidi}) must be less than maxMidi (${maxMidi})`);
     }
   }
 
