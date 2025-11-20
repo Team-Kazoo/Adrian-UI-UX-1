@@ -607,7 +607,37 @@ class KazooApp {
         const tempAudioIO = this.audioIO || new AudioIO();
         
         try {
-            const { inputs, outputs } = await tempAudioIO.enumerateDevices();
+            let { inputs, outputs } = await tempAudioIO.enumerateDevices();
+
+            // Check if labels are missing (Permission issue)
+            const hasEmptyLabels = inputs.some(d => !d.label) || outputs.some(d => !d.label);
+            
+            if (hasEmptyLabels) {
+                console.warn('[Main] Device labels missing. Requesting temporary permission...');
+                // Visual feedback
+                if (this.ui.refreshDevicesBtn) {
+                    const btnText = this.ui.refreshDevicesBtn.innerText;
+                    this.ui.refreshDevicesBtn.innerText = 'Requesting Permission...';
+                    
+                    try {
+                        // Request explicit permission
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        // Stop immediate - just needed permission
+                        stream.getTracks().forEach(t => t.stop());
+                        
+                        // Re-enumerate
+                        const result = await tempAudioIO.enumerateDevices();
+                        inputs = result.inputs;
+                        outputs = result.outputs;
+                        console.log('[Main] Permissions granted. Devices refreshed.');
+                    } catch (err) {
+                        console.error('[Main] Permission request failed:', err);
+                        alert('Microphone permission is required to see device names.');
+                    } finally {
+                        this.ui.refreshDevicesBtn.innerText = btnText;
+                    }
+                }
+            }
             
             // Populate Inputs
             if (this.ui.audioInputSelect) {
