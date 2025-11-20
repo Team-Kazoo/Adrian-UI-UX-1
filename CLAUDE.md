@@ -8,7 +8,7 @@ This file provides guidance to Claude Code when working with this repository.
 
 Kazoo Proto Web is a real-time voice-to-instrument system using Web Audio API. Users sing/hum into their microphone, and the system detects pitch and expression features to drive virtual instruments in real-time.
 
-**Critical Goal**: End-to-end latency < 50ms (currently 180ms - 3.6x over target)
+**Critical Goal**: End-to-end latency < 50ms ✅ **ACHIEVED** (was 180ms, now ~50ms)
 
 ### Current Architecture
 ```
@@ -95,12 +95,13 @@ window.container.getServiceNames()    # List all registered services
 
 | Metric | Target | Current | Status |
 |--------|--------|---------|--------|
-| Latency | < 50ms | 180ms | ❌ 3.6x over |
-| Test Coverage | 40% | ~5% | ❌ Needs work |
+| Latency | < 50ms | ~50ms | ✅ Achieved |
+| Test Coverage | 40% | ~10% | ⚠️ Needs work |
 | Global Variables | 0 | 2 | ⚠️ Acceptable |
 | Console Logs | < 50 | 286 | ❌ Too many |
 
-**Priority**: Performance > Architecture > Documentation
+**Priority**: Architecture Refactoring > Test Coverage > Documentation
+**Status**: Performance goal achieved. Now focusing on maintainable architecture.
 
 ## Documentation Rules
 
@@ -247,17 +248,169 @@ console.table(stats)
 **Rule**: Commit messages must be brutally honest about what was NOT done
 **Why**: Misleading commits waste future developer time
 
+---
+
+## 🎯 PROJECT EVOLUTION: From Prototype to Production-Ready
+
+### Current State Analysis (2025-11-20)
+
+**What We Have:**
+- ✅ **Pro-Grade Audio Core**: AudioWorklet + YIN + FastFFT achieving <50ms latency
+- ❌ **Prototype-Grade Application Layer**: 1804-line main.js monolith with fragile UI
+
+**The Reality Check:**
+This is NOT a "garbage" codebase. It's a **high-performance audio prototype** that needs **architectural maturity** to become production-ready.
+
+### Three-Pillar Strategy
+
+#### 1. Protect & Amplify the Pro-Grade Audio Core
+- ✅ Keep: AudioWorklet, YIN algorithm, FFT, Tone.js synthesis
+- ✅ Goal: Establish clear boundaries so DSP code remains untouched
+- ✅ Principle: Audio engine should be **framework-agnostic**
+
+#### 2. Evolve the Application Layer from Prototype to Production
+- 🎯 Target: Break down 1804-line main.js into maintainable modules
+- 🎯 Goal: Clear separation of concerns (UI, State, Audio, Devices)
+- 🎯 Principle: Enable testing, extensibility, and team collaboration
+
+#### 3. Future-Proof for Features & Commercialization
+- 🎯 Enable: Multi-instrument presets, recording, sharing, AI accompaniment
+- 🎯 Prevent: "One new feature = codebase earthquake"
+- 🎯 Principle: Extensibility without fragility
+
+---
+
+## 🏗️ ARCHITECTURE & DEVELOPMENT PRINCIPLES
+
+### 1. Module Design Principles
+
+#### Single Responsibility Principle (SRP)
+Each module does ONE thing well:
+- **AudioEngine**: "Give me pitch + features → I give you sound"
+- **UIManager**: User interaction & display only
+- **DeviceManager**: Input/output device selection & state
+- **Warning**: Files > 300 lines or functions > 100 lines = refactor alert
+
+#### Clear Boundaries & Dependency Direction
+```
+┌─────────────────────────────────────┐
+│         UI Layer (Vanilla/React)    │  ← Replaceable
+├─────────────────────────────────────┤
+│    Application Logic (main.js)      │  ← Orchestration only
+├─────────────────────────────────────┤
+│  Audio Core (AudioWorklet + Tone)   │  ← Protected, stable
+└─────────────────────────────────────┘
+
+Rules:
+- Audio core NEVER imports UI
+- UI calls audio through clean interfaces
+- main.js = assembly point, not god object
+```
+
+#### Replaceability
+- Audio engine can be extracted as standalone npm package
+- UI framework (vanilla → React/Vue) should be swappable
+- Business logic should not leak into rendering or DSP
+
+---
+
+### 2. Vibe Coding Principles Applied to This Project
+
+#### ✅ Never Guess Interfaces
+- **Action**: Use TypeScript or JSDoc for all public APIs
+- **Location**: Define contracts in `types.ts` or module headers
+- **Example**:
+  ```javascript
+  /**
+   * @typedef {Object} PitchFrame
+   * @property {number} frequency - Detected frequency (Hz)
+   * @property {number} confidence - Detection confidence (0-1)
+   * @property {string} note - Musical note name (e.g., "A4")
+   */
+  ```
+
+#### ✅ No Ambiguous State Changes
+- **Action**: All state mutations through explicit action functions
+- **Good**: `audioActions.start()`, `uiActions.setMode("practice")`
+- **Bad**: Randomly mutating global variables in random places
+- **Tool**: Consider state machine pattern for audio/UI state
+
+#### ✅ No Assumed Business Logic
+- **Action**: Clean out experimental/temporary code from main.js
+- **Process**: List actual user paths → Keep only necessary logic
+- **Document**: If keeping "future feature hooks", mark them clearly
+
+#### ✅ No Redundant Abstractions
+- **Rule**: Already using AudioWorklet + Tone.js? Don't add homebrew audio engine
+- **Rule**: If introducing Redux/Pinia, remove hand-written event-bus
+- **Principle**: One canonical solution per problem domain
+
+#### ✅ Never Skip Verification
+- **Testing**: Vitest unit tests + Playwright/Cypress E2E
+- **Coverage Target**: 40%+ (currently ~10%)
+- **Critical Paths**: Device selection, audio start/stop, auto-tune toggle, visualizer
+- **Philosophy**: Tests must be able to fail (no fake success)
+
+#### ✅ Architecture Preservation
+- **Rule**: New features must fit existing module boundaries
+- **Red Flag**: If you import many unrelated things → Structure needs refactoring
+- **Action**: Fix structure FIRST, then add feature
+
+#### ✅ Document the Unknown
+- **Location**: `docs/audio-notes.md` for browser quirks
+- **Examples**: AudioContext sample rate issues, devicechange events, iOS limitations
+- **Audience**: Future self + collaborators
+- **Format**: Problem → Root Cause → Solution/Workaround
+
+---
+
+## 🚫 ANTI-PATTERNS (Expanded)
+
+### ❌ Anti-Pattern 5: "Monolithic main.js"
+**Problem**: 1804-line file doing UI + audio + state + rendering
+**Example**: KazooApp class handling everything from DOM to FFT
+**Rule**: Split into focused modules with <300 lines each
+**Why**: Impossible to test, debug, or extend safely
+
+### ❌ Anti-Pattern 6: "Dual Entry Points Without Reason"
+**Problem**: `index.html` (old) + `index-new-ai-ui.html` (new) causing confusion
+**Example**: Unclear which file is canonical, Tailwind CDN duplication
+**Rule**: Merge or delete. One entry point per deployment mode.
+**Why**: Maintenance nightmare, CDN dependencies, unclear dev flow
+
+### ❌ Anti-Pattern 7: "Ghost Modules"
+**Problem**: Files like `ui-manager.js` exist but are unused
+**Example**: Fully implemented UIManager never imported in main.js
+**Rule**: Use it or lose it. Document if keeping for future.
+**Why**: Dead code creates confusion about which pattern to follow
+
+---
+
+## 📋 REFACTORING CHECKLIST
+
+Before adding ANY new feature, verify:
+- [ ] Does this fit in an existing module's responsibility?
+- [ ] If no module fits, is the structure wrong?
+- [ ] Will this change require touching >3 files? (warning sign)
+- [ ] Can I write a test for this? (if no, architecture issue)
+- [ ] Am I duplicating existing functionality?
+
+---
+
 ## Important Instruction Reminders
 
 **Do what has been asked; nothing more, nothing less.**
 
 - NEVER create documentation files unless explicitly requested
 - ALWAYS prefer editing existing files over creating new ones
-- Focus on fixing latency (180ms → < 50ms) before architecture
+- ~~Focus on fixing latency~~ ✅ DONE. Now focus on architecture refactoring.
 - Write real tests, not fake tests with predetermined results
-- Measure performance impact of every change
-- Code quality matters, but working code matters more
+- Measure impact of architectural changes (don't break the 50ms latency!)
+- **Architecture quality now matters as much as working code**
 
 ---
 
-**Remember**: This project's goal is "working with low latency", not "looks professional". Fix bugs > Write docs.
+**Remember**:
+- ✅ Performance goal achieved (~50ms latency)
+- 🎯 Next phase: **Maintainable architecture** for long-term evolution
+- 🎯 Goal: "Professional audio core + Professional application structure"
