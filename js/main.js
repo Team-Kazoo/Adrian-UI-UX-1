@@ -589,23 +589,23 @@ class MamboApp {
         });
     }
 
+    /**
+     * Setup Help Section UI (State-Driven)
+     * @private
+     */
     _setupHelpUI() {
-        if (this.ui.helpBtn) {
-            this.ui.helpBtn.addEventListener('click', () => {
+        this.view.bindHelpUI({
+            onHelpBtnClick: () => {
                 this.openHelpSection();
                 this.scrollToSection('tipsSection');
-            });
-        }
-
-        if (this.ui.helpToggle) {
-            this.ui.helpToggle.addEventListener('click', () => {
-                const isOpen = this.ui.helpContent.classList.toggle('show');
-                this.ui.helpToggle.setAttribute('aria-expanded', isOpen);
+            },
+            onHelpToggle: () => {
+                const isOpen = this.view.toggleHelp();
                 if (isOpen) {
                     this.scrollToSection('tipsSection');
                 }
-            });
-        }
+            }
+        });
 
         if (this.ui.navLinks) {
             this.ui.navLinks.forEach(link => {
@@ -830,31 +830,23 @@ class MamboApp {
         
         // If enabled, use target value. If disabled, force 0.
         const finalStrength = isEnabled ? targetStrength : 0.0;
-        
+
         this.continuousSynthEngine.setAutoTuneStrength(finalStrength);
-        
+
         // Visual feedback for controls opacity
-        const strengthCtrl = document.getElementById('strengthControl');
-        const speedCtrl = document.getElementById('speedControl');
-        const opacity = isEnabled ? '1' : '0.5';
-        const pointerEvents = isEnabled ? 'auto' : 'none';
-        
-        if (strengthCtrl) {
-            strengthCtrl.style.opacity = opacity;
-            strengthCtrl.style.pointerEvents = pointerEvents;
-        }
-        if (speedCtrl) {
-            speedCtrl.style.opacity = opacity;
-            speedCtrl.style.pointerEvents = pointerEvents;
-        }
+        this.view.renderAutoTuneControls(isEnabled);
     }
 
     /**
-     * Switch Engine Mode
+     * Switch Engine Mode (State-Driven)
      */
     switchMode(useContinuous) {
         this.useContinuousMode = useContinuous;
-        this.ui.modeText.textContent = useContinuous ? 'Continuous' : 'Legacy';
+
+        // Update Store to trigger View re-render
+        store.setState({
+            synth: { ...store.getState().synth, continuousMode: useContinuous }
+        });
 
         console.log(`[Mode Switch] ${useContinuous ? 'Continuous' : 'Legacy'} mode activated`);
     }
@@ -931,10 +923,8 @@ class MamboApp {
 
         // Update status and helper via View layer
         this.view.renderStatusMessage(`Running (${mode})`, { active: true });
-        this.view.renderDeviceHelper(
-            this.lastKnownInputLabel || 'System Default',
-            this.lastKnownOutputLabel || 'System Default'
-        );
+
+        // Override device helper with playback message
         if (this.view.recordingHelper) {
             this.view.recordingHelper.textContent = 'Hum or sing to hear your voice transformed!';
         }
@@ -1245,17 +1235,7 @@ class MamboApp {
 
 
     openHelpSection() {
-        if (!this.ui.helpContent) {
-            return;
-        }
-
-        if (!this.ui.helpContent.classList.contains('show')) {
-            this.ui.helpContent.classList.add('show');
-        }
-
-        if (this.ui.helpToggle) {
-            this.ui.helpToggle.setAttribute('aria-expanded', true);
-        }
+        this.view.renderHelp(true);
     }
 
     scrollToSection(targetId) {

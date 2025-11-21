@@ -47,6 +47,15 @@ export class MamboView {
         this.warningBox = this.doc.getElementById('warningBox');
         this.warningText = this.doc.getElementById('warningText');
         this.recordingHelper = this.doc.getElementById('recordingHelper');
+
+        // Help Section Elements
+        this.helpBtn = this.doc.getElementById('helpBtn');
+        this.helpToggle = this.doc.getElementById('helpToggle');
+        this.helpContent = this.doc.getElementById('helpContent');
+
+        // Auto-Tune Control Elements
+        this.strengthControl = this.doc.getElementById('strengthControl');
+        this.speedControl = this.doc.getElementById('speedControl');
     }
 
     /**
@@ -615,5 +624,72 @@ export class MamboView {
         const mic = inputLabel || 'System Default';
         const out = outputLabel || 'System Default';
         this.recordingHelper.textContent = `Mic · ${mic}  |  Output · ${out}`;
+    }
+
+    /**
+     * Bind Help Section UI events
+     * @param {object} handlers
+     * @param {() => void} handlers.onHelpBtnClick
+     * @param {() => void} handlers.onHelpToggle
+     */
+    bindHelpUI(handlers) {
+        if (this.helpBtn && handlers.onHelpBtnClick) {
+            this.helpBtn.addEventListener('click', handlers.onHelpBtnClick);
+        }
+
+        if (this.helpToggle && handlers.onHelpToggle) {
+            this.helpToggle.addEventListener('click', handlers.onHelpToggle);
+        }
+    }
+
+    /**
+     * Render Help Section State
+     * @param {boolean} isOpen - Whether help section is open
+     */
+    renderHelp(isOpen) {
+        if (!this.helpContent) return;
+
+        if (isOpen) {
+            this.helpContent.classList.add('show');
+        } else {
+            this.helpContent.classList.remove('show');
+        }
+
+        if (this.helpToggle) {
+            this.helpToggle.setAttribute('aria-expanded', isOpen);
+        }
+    }
+
+    /**
+     * Toggle Help Section and return new state
+     * @returns {boolean} New open state
+     */
+    toggleHelp() {
+        if (!this.helpContent) return false;
+
+        const isOpen = this.helpContent.classList.toggle('show');
+        if (this.helpToggle) {
+            this.helpToggle.setAttribute('aria-expanded', isOpen);
+        }
+        return isOpen;
+    }
+
+    /**
+     * Render Auto-Tune Controls State (Enable/Disable)
+     * @param {boolean} enabled - Whether Auto-Tune is enabled
+     */
+    renderAutoTuneControls(enabled) {
+        const opacity = enabled ? '1' : '0.5';
+        const pointerEvents = enabled ? 'auto' : 'none';
+
+        if (this.strengthControl) {
+            this.strengthControl.style.opacity = opacity;
+            this.strengthControl.style.pointerEvents = pointerEvents;
+        }
+
+        if (this.speedControl) {
+            this.speedControl.style.opacity = opacity;
+            this.speedControl.style.pointerEvents = pointerEvents;
+        }
     }
 }
