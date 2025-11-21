@@ -17,7 +17,7 @@
 
   <br>
 
-  <img src="image.png" alt="Kazoo Proto Interface" width="100%">
+  <img src="images/readme/app-interface.png" alt="Kazoo Proto Interface" width="100%">
 </div>
 
 <br>
