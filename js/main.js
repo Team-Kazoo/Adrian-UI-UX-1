@@ -554,63 +554,66 @@ class MamboApp {
         if (this.ui.settingsBackdrop) this.ui.settingsBackdrop.addEventListener('click', closeSettings);
     }
 
+    /**
+     * Setup Device Select UI (State-Driven)
+     * @private
+     */
     _setupDeviceUI() {
-        if (this.ui.audioInputSelect) {
-            this.ui.audioInputSelect.addEventListener('change', async (e) => {
-                this.selectedInputId = e.target.value;
-                const selectedLabel = e.target.selectedOptions[0]?.textContent || 'Custom Microphone';
-                console.log(`[Main] Input device selected: ${this.selectedInputId}`);
+        // 1. Bind UI Events -> Controller Actions
+        this.view.bindDeviceSelectUI({
+            onInputDeviceChange: async (deviceId) => {
+                const selectedLabel = this.ui.audioInputSelect?.selectedOptions[0]?.textContent || 'Custom Microphone';
+
+                this.selectedInputId = deviceId;
                 this.lastKnownInputLabel = selectedLabel;
-                this._persistDevicePreference('input', this.selectedInputId, selectedLabel);
+                this._persistDevicePreference('input', deviceId, selectedLabel);
                 this._updateDeviceHelperText();
-                
+
+                console.log(`[Main] Input device selected: ${deviceId}`);
+
                 // If running, restart to apply new microphone
                 if (this.isRunning && this.audioIO) {
                     console.log('[Main] Restarting audio to apply new input device...');
-                    // Visual feedback
-                    const originalText = this.ui.systemStatus.textContent;
-                    this.ui.systemStatus.textContent = 'Switching Mic...';
-                    
+                    const originalText = this.ui.systemStatus?.textContent || '';
+                    if (this.ui.systemStatus) this.ui.systemStatus.textContent = 'Switching Mic...';
+
                     try {
                         await this.audioIO.stop();
-                        // Update config with new device ID
-                        this.audioIO.configure({ inputDeviceId: this.selectedInputId });
+                        this.audioIO.configure({ inputDeviceId: deviceId });
                         await this.audioIO.start();
                         console.log('[Main] Audio restarted with new input.');
-                        this.ui.systemStatus.textContent = originalText;
+                        if (this.ui.systemStatus) this.ui.systemStatus.textContent = originalText;
                     } catch (err) {
                         console.error('[Main] Failed to switch input:', err);
                         this._showError('Failed to switch microphone: ' + err.message);
                     }
                 }
-            });
-        }
+            },
 
-        if (this.ui.audioOutputSelect) {
-            this.ui.audioOutputSelect.addEventListener('change', async (e) => {
-                this.selectedOutputId = e.target.value;
-                const selectedLabel = e.target.selectedOptions[0]?.textContent || 'Custom Output';
-                console.log(`[Main] Output device selected: ${this.selectedOutputId}`);
+            onOutputDeviceChange: async (deviceId) => {
+                const selectedLabel = this.ui.audioOutputSelect?.selectedOptions[0]?.textContent || 'Custom Output';
+
+                this.selectedOutputId = deviceId;
                 this.lastKnownOutputLabel = selectedLabel;
-                this._persistDevicePreference('output', this.selectedOutputId, selectedLabel);
+                this._persistDevicePreference('output', deviceId, selectedLabel);
                 this._updateDeviceHelperText();
-                
+
+                console.log(`[Main] Output device selected: ${deviceId}`);
+
                 // If running, update immediately
                 if (this.audioIO) {
                     try {
-                        await this.audioIO.setAudioOutputDevice(this.selectedOutputId);
+                        await this.audioIO.setAudioOutputDevice(deviceId);
                     } catch (err) {
                         console.error('[Main] Failed to set output:', err);
                     }
                 }
-            });
-        }
+            },
 
-        if (this.ui.refreshDevicesBtn) {
-            this.ui.refreshDevicesBtn.addEventListener('click', () => {
+            onRefreshDevices: () => {
                 this._refreshDeviceList();
-            });
-        }
+            }
+        });
     }
 
     _setupHelpUI() {
@@ -681,54 +684,6 @@ class MamboApp {
         });
     }
 
-    /**
-     * Populate a device select dropdown with devices
-     * @param {'input'|'output'} type - Device type (input or output)
-     * @param {Array} devices - Array of device objects
-     * @param {HTMLSelectElement} selectElement - The select element to populate
-     * @param {string} desiredValue - The value to restore if possible
-     * @param {string} lastKnownLabel - Label to show for disconnected device
-     * @private
-     */
-    _populateDeviceSelect(type, devices, selectElement, desiredValue, lastKnownLabel) {
-        if (!selectElement) return;
-
-        const isInput = type === 'input';
-        const deviceTypeName = isInput ? 'Microphone' : 'Speaker';
-        const defaultLabel = isInput ? 'Default Microphone' : 'Default Output';
-
-        // Clear existing options
-        selectElement.innerHTML = '';
-
-        // Add default option
-        const defaultOpt = document.createElement('option');
-        defaultOpt.value = 'default';
-        defaultOpt.textContent = defaultLabel;
-        selectElement.appendChild(defaultOpt);
-
-        // Add device options
-        devices.forEach((device, index) => {
-            const option = document.createElement('option');
-            option.value = device.deviceId;
-            option.textContent = device.label || `${deviceTypeName} ${index + 1}`;
-            selectElement.appendChild(option);
-        });
-
-        // Restore previous selection if possible
-        const hasMatchingOption = [...selectElement.options].some(opt => opt.value === desiredValue);
-
-        if (desiredValue && hasMatchingOption) {
-            selectElement.value = desiredValue;
-        } else if (desiredValue && desiredValue !== 'default') {
-            // Device disconnected - add ghost option
-            const ghostOption = document.createElement('option');
-            ghostOption.value = desiredValue;
-            ghostOption.textContent = `${lastKnownLabel || `Previous ${deviceTypeName}`} (disconnected)`;
-            ghostOption.disabled = true;
-            selectElement.appendChild(ghostOption);
-            selectElement.value = desiredValue;
-        }
-    }
 
     /**
      * Refresh audio device list
@@ -785,34 +740,22 @@ class MamboApp {
                 }
             }
             
-            // Populate Inputs
+            // Render device selects via View layer
             const desiredInputVal = this.selectedInputId || this.ui.audioInputSelect?.value || 'default';
-            this._populateDeviceSelect(
-                'input',
-                inputs,
-                this.ui.audioInputSelect,
-                desiredInputVal,
-                this.lastKnownInputLabel
-            );
-
-            // Populate Outputs
             const desiredOutputVal = this.selectedOutputId || this.ui.audioOutputSelect?.value || 'default';
-            this._populateDeviceSelect(
-                'output',
-                outputs,
-                this.ui.audioOutputSelect,
-                desiredOutputVal,
-                this.lastKnownOutputLabel
-            );
 
-            // Update button animation
-            if (this.ui.refreshDevicesBtn) {
-                const icon = this.ui.refreshDevicesBtn.querySelector('svg');
-                if (icon) {
-                    icon.classList.add('animate-spin');
-                    setTimeout(() => icon.classList.remove('animate-spin'), 500);
-                }
-            }
+            this.view.renderDeviceSelects({
+                inputDevices: inputs,
+                outputDevices: outputs,
+                selectedInputId: desiredInputVal,
+                selectedOutputId: desiredOutputVal,
+                lastKnownInputLabel: this.lastKnownInputLabel,
+                lastKnownOutputLabel: this.lastKnownOutputLabel
+            });
+
+            // Refresh button animation via View layer
+            this.view.renderDeviceRefreshState(true);
+            setTimeout(() => this.view.renderDeviceRefreshState(false), 500);
             this._updateDeviceHelperText();
 
         } catch (error) {

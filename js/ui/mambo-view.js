@@ -29,6 +29,11 @@ export class MamboView {
         this.aiIconLoading = this.doc.getElementById('aiIconLoading');
         this.aiIconActive = this.doc.getElementById('aiIconActive');
         this.aiProgressBar = this.doc.getElementById('aiProgressBar');
+
+        // Device Select Elements
+        this.audioInputSelect = this.doc.getElementById('audioInputSelect');
+        this.audioOutputSelect = this.doc.getElementById('audioOutputSelect');
+        this.refreshDevicesBtn = this.doc.getElementById('refreshDevicesBtn');
     }
 
     /**
@@ -317,6 +322,141 @@ export class MamboView {
                 if (this.aiJamStatus) this.aiJamStatus.textContent = 'Off';
                 if (this.aiJamBtn) this.aiJamBtn.disabled = false;
                 break;
+        }
+    }
+
+    /**
+     * Bind Device Select UI events
+     * @param {object} handlers
+     * @param {(deviceId: string) => void} handlers.onInputDeviceChange
+     * @param {(deviceId: string) => void} handlers.onOutputDeviceChange
+     * @param {() => void} handlers.onRefreshDevices
+     */
+    bindDeviceSelectUI(handlers) {
+        if (this.audioInputSelect && handlers.onInputDeviceChange) {
+            this.audioInputSelect.addEventListener('change', (e) => {
+                handlers.onInputDeviceChange(e.target.value);
+            });
+        }
+
+        if (this.audioOutputSelect && handlers.onOutputDeviceChange) {
+            this.audioOutputSelect.addEventListener('change', (e) => {
+                handlers.onOutputDeviceChange(e.target.value);
+            });
+        }
+
+        if (this.refreshDevicesBtn && handlers.onRefreshDevices) {
+            this.refreshDevicesBtn.addEventListener('click', handlers.onRefreshDevices);
+        }
+    }
+
+    /**
+     * Render Device Select dropdowns
+     * @param {object} deviceState
+     * @param {Array} deviceState.inputDevices - Array of input device objects
+     * @param {Array} deviceState.outputDevices - Array of output device objects
+     * @param {string} deviceState.selectedInputId - Currently selected input device ID
+     * @param {string} deviceState.selectedOutputId - Currently selected output device ID
+     * @param {string} [deviceState.lastKnownInputLabel] - Label for disconnected input device
+     * @param {string} [deviceState.lastKnownOutputLabel] - Label for disconnected output device
+     */
+    renderDeviceSelects(deviceState) {
+        if (!deviceState) return;
+
+        const {
+            inputDevices = [],
+            outputDevices = [],
+            selectedInputId = 'default',
+            selectedOutputId = 'default',
+            lastKnownInputLabel = '',
+            lastKnownOutputLabel = ''
+        } = deviceState;
+
+        // Render input devices
+        if (this.audioInputSelect) {
+            this._populateSelectElement(
+                this.audioInputSelect,
+                inputDevices,
+                selectedInputId,
+                'Microphone',
+                'Default Microphone',
+                lastKnownInputLabel
+            );
+        }
+
+        // Render output devices
+        if (this.audioOutputSelect) {
+            this._populateSelectElement(
+                this.audioOutputSelect,
+                outputDevices,
+                selectedOutputId,
+                'Speaker',
+                'Default Output',
+                lastKnownOutputLabel
+            );
+        }
+    }
+
+    /**
+     * Render refresh button animation
+     * @param {boolean} isRefreshing - Whether refresh is in progress
+     */
+    renderDeviceRefreshState(isRefreshing) {
+        if (!this.refreshDevicesBtn) return;
+
+        const icon = this.refreshDevicesBtn.querySelector('svg');
+        if (!icon) return;
+
+        if (isRefreshing) {
+            icon.classList.add('animate-spin');
+        } else {
+            icon.classList.remove('animate-spin');
+        }
+    }
+
+    /**
+     * Populate a select element with device options
+     * @private
+     * @param {HTMLSelectElement} selectElement
+     * @param {Array} devices - Array of {deviceId, label} objects
+     * @param {string} selectedValue - Value to select
+     * @param {string} deviceTypeName - 'Microphone' or 'Speaker'
+     * @param {string} defaultLabel - Label for default option
+     * @param {string} lastKnownLabel - Label for disconnected device
+     */
+    _populateSelectElement(selectElement, devices, selectedValue, deviceTypeName, defaultLabel, lastKnownLabel) {
+        if (!selectElement) return;
+
+        // Clear existing options
+        selectElement.innerHTML = '';
+
+        // Add default option
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = 'default';
+        defaultOpt.textContent = defaultLabel;
+        selectElement.appendChild(defaultOpt);
+
+        // Add device options
+        devices.forEach((device, index) => {
+            const option = document.createElement('option');
+            option.value = device.deviceId;
+            option.textContent = device.label || `${deviceTypeName} ${index + 1}`;
+            selectElement.appendChild(option);
+        });
+
+        // Restore previous selection if possible
+        const hasMatchingOption = [...selectElement.options].some(opt => opt.value === selectedValue);
+
+        if (selectedValue && hasMatchingOption) {
+            selectElement.value = selectedValue;
+        } else if (selectedValue && selectedValue !== 'default') {
+            // Device disconnected - add ghost option
+            const ghostOption = document.createElement('option');
+            ghostOption.value = selectedValue;
+            ghostOption.textContent = `${lastKnownLabel || `Previous ${deviceTypeName}`} (disconnected)`;
+            ghostOption.disabled = true;
+            selectElement.appendChild(ghostOption);
+            selectElement.value = selectedValue;
         }
     }
 }
