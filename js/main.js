@@ -18,6 +18,7 @@ import { AiHarmonizer } from './features/ai-harmonizer.js';
 import { VisualizerManager } from './managers/visualizer-manager.js'; // Import the new visualizer manager
 import { SynthManager } from './managers/synth-manager.js'; // Import SynthManager
 import { AudioLoopController } from './core/audio-loop-controller.js'; // Import AudioLoopController
+import { TIMING_CONSTANTS } from './config/constants.js';
 
 class KazooApp {
     /**
@@ -1112,43 +1113,6 @@ class KazooApp {
         }
     }
 
-    /**
-     * @deprecated Legacy audioInputManager is deprecated
-     * Code kept for reference only, no longer used
-     * AudioIO provides full AudioWorklet + ScriptProcessor fallback support
-     */
-    /*
-    async _startWithLegacyAudio() {
-        console.log('🔄 [Legacy] Using audioInputManager');
-
-        // Initialize audio system
-        if (!audioInputManager.audioContext) {
-            await audioInputManager.initialize();
-        }
-
-        // Start microphone
-        await audioInputManager.startMicrophone();
-
-        // Initialize engine (Use Legacy bufferSize)
-        await this._initializeEngines(
-            audioInputManager.audioContext,
-            audioInputManager.config.bufferSize,
-            'script-processor'
-        );
-
-        // Set audio process callback
-        audioInputManager.onAudioProcess = this.onAudioProcess.bind(this);
-
-        // Initialize performance monitor
-        if (!performanceMonitor.metrics.sampleRate) {
-            await performanceMonitor.initialize(
-                audioInputManager.audioContext,
-                audioInputManager.config.bufferSize,
-                'script-processor'
-            );
-        }
-    }
-    */
 
     /**
      * Initialize Synthesizer Engine and Pitch Detector

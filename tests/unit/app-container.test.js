@@ -27,7 +27,7 @@ describe('AppContainer', () => {
 
       expect(() => {
         container.register('logger', () => ({ log: () => {} }));
-      }).toThrow('服务 "logger" 已存在');
+      }).toThrow('Service "logger" already exists');
     });
 
     it('should throw error when factory is not a function', () => {

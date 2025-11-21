@@ -5,22 +5,22 @@ import instrumentPresetManager from './config/instrument-presets.js';
 /**
  * Continuous Frequency Synthesizer Engine
  *
- * 连续频率合成器引擎 - 实时跟踪人声音高变化
+ * Real-time voice pitch tracking synthesizer engine
  *
- * 核心改进：
- * - 不再量化到离散音符，直接使用检测到的频率（Hz）
- * - 平滑的频率过渡（Portamento/滑音效果）
- * - 保留每个乐器的独特音色和包络特征
- * - 捕捉微妙的音乐表现力（颤音、滑音、音量变化）
+ * Key improvements:
+ * - Direct frequency (Hz) usage instead of discrete note quantization
+ * - Smooth frequency transitions (Portamento/glide effect)
+ * - Preserves unique timbre and envelope characteristics per instrument
+ * - Captures subtle musical expressions (vibrato, glide, volume changes)
  *
- * 架构对比：
- * 旧: PitchDetector → Note("C4") → triggerAttack("C4") → 固定频率
- * 新: PitchDetector → Frequency(Hz) → 平滑 → oscillator.frequency → 实时跟随
+ * Architecture comparison:
+ * Old: PitchDetector → Note("C4") → triggerAttack("C4") → Fixed frequency
+ * New: PitchDetector → Frequency(Hz) → Smoothing → oscillator.frequency → Real-time tracking
  *
- * P0 修复:
- * - 乐器预设从代码分离到 instrument-presets.js
- * - 支持运行时加载自定义音色
- * - 噪声层参数从集中式配置读取
+ * Recent fixes:
+ * - Instrument presets extracted to instrument-presets.js
+ * - Runtime custom timbre loading support
+ * - Noise layer parameters read from centralized config
  *
  * @class ContinuousSynthEngine
  * @author Kazoo Proto Team
@@ -29,37 +29,37 @@ import instrumentPresetManager from './config/instrument-presets.js';
 
 export class ContinuousSynthEngine {
     /**
-     * @param {Object} options - 配置选项
-     * @param {Object} options.appConfig: 集中式配置对象
-     * @param {Object} options.instrumentPresets: 乐器预设对象 (可选)
+     * @param {Object} options - Configuration options
+     * @param {Object} options.appConfig - Centralized configuration object
+     * @param {Object} options.instrumentPresets - Instrument presets object (optional)
      */
     constructor(options = {}) {
-        //  存储集中式配置
+        // Store centralized configuration
         this.appConfig = options.appConfig || null;
 
-        //  乐器预设配置 (从外部加载,向后兼容)
+        // Instrument presets configuration (loaded from external source, backward compatible)
         this.instrumentPresets = options.instrumentPresets || instrumentPresetManager.presets;
 
-        // 当前状态
+        // Current state
         this.currentInstrument = 'flute';
         this.currentSynth = null;
         this.isPlaying = false;
         this.currentFrequency = 0;
 
-        // 频率平滑参数
-        this.frequencyUpdateThreshold = 0.005;  // 0.5% 差异才更新（避免抖动）
+        // Frequency smoothing parameters
+        this.frequencyUpdateThreshold = 0.005;  // 0.5% difference threshold to update (avoid jitter)
         this.lastUpdateTime = 0;
-        this.minUpdateInterval = 10;  // 最小更新间隔 10ms（避免过度触发）
+        this.minUpdateInterval = 10;  // Minimum update interval 10ms (avoid excessive triggering)
 
-        // 置信度阈值 (从集中式配置读取)
-        this.minConfidence = options.appConfig?.pitchDetector?.minConfidence ?? 0.05;  // 🔥 修复: 从配置读取
+        // Confidence threshold (read from centralized config)
+        this.minConfidence = options.appConfig?.pitchDetector?.minConfidence ?? 0.05;
 
-        // 无声检测机制（防止停止哼唱后声音不停）
-        this.silenceTimeout = 300;  // 300ms无有效音高则停止
+        // Silence detection mechanism (prevent sound from continuing after humming stops)
+        this.silenceTimeout = 300;  // Stop after 300ms without valid pitch
         this.lastValidPitchTime = 0;
         this.silenceCheckInterval = null;
 
-        //  Articulation 状态追踪
+        // Articulation state tracking
         this.lastArticulationState = 'silence';
 
         // 效果器链
@@ -814,13 +814,6 @@ export class ContinuousSynthEngine {
     }
 }
 
-// Step 2 Layer 2: 移除全局实例创建，解决双实例问题
-// 实例现在由 AppContainer 统一管理（注入配置和预设）
-// 旧代码: const continuousSynthEngine = new ContinuousSynthEngine();
-//
-// 这是导致双实例问题的根源：
-// - 模块顶层创建了一个无配置的实例
-// - 容器又创建了另一个带依赖注入的实例
-// - 业务代码使用的是旧的模块级实例，容器实例无人使用
+// Instance managed by AppContainer with proper dependency injection
 //
 // 为向后兼容，在 main.js 中通过 window.continuousSynthEngine 暴露容器实例

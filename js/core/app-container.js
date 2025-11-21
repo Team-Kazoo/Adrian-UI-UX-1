@@ -1,13 +1,13 @@
 /**
- * 依赖注入容器 (Dependency Injection Container)
- *  模块化重构 - 控制反转 (IoC)
+ * Dependency Injection Container
+ * Modular refactoring - Inversion of Control (IoC)
  *
- * 基于 Service Locator 模式,实现单例管理和依赖自动解析
+ * Based on Service Locator pattern, implements singleton management and automatic dependency resolution
  *
- * 设计原则:
- * - Single Responsibility: 只负责服务注册和解析
- * - Dependency Inversion: 高层模块不依赖低层模块,都依赖抽象
- * - Open/Closed: 对扩展开放,对修改关闭
+ * Design principles:
+ * - Single Responsibility: Only responsible for service registration and resolution
+ * - Dependency Inversion: High-level modules don't depend on low-level modules, both depend on abstractions
+ * - Open/Closed: Open for extension, closed for modification
  *
  * @module AppContainer
  * @author Ziming Wang & Claude
@@ -15,75 +15,75 @@
  */
 
 /**
- * 服务工厂函数类型
+ * Service factory function type
  * @callback ServiceFactory
- * @param {AppContainer} container - 容器实例,用于获取依赖
- * @returns {*} 服务实例
+ * @param {AppContainer} container - Container instance for dependency retrieval
+ * @returns {*} Service instance
  */
 
 /**
- * 服务配置类型
+ * Service configuration type
  * @typedef {Object} ServiceConfig
- * @property {ServiceFactory} factory - 服务工厂函数
- * @property {*} instance - 服务实例 (懒加载,首次获取时创建)
- * @property {boolean} singleton - 是否单例 (默认 true)
- * @property {string[]} dependencies - 依赖列表 (用于循环依赖检测)
+ * @property {ServiceFactory} factory - Service factory function
+ * @property {*} instance - Service instance (lazy-loaded, created on first get)
+ * @property {boolean} singleton - Whether singleton (default true)
+ * @property {string[]} dependencies - Dependency list (for circular dependency detection)
  */
 
 /**
- * 应用容器 - 依赖注入核心
+ * Application Container - Dependency Injection Core
  *
- * 功能:
- * 1. 服务注册 (register)
- * 2. 服务获取 (get)
- * 3. 单例管理 (自动)
- * 4. 循环依赖检测
- * 5. 生命周期管理
+ * Features:
+ * 1. Service registration (register)
+ * 2. Service retrieval (get)
+ * 3. Singleton management (automatic)
+ * 4. Circular dependency detection
+ * 5. Lifecycle management
  *
  * @example
  * const container = new AppContainer();
  *
- * // 注册服务
+ * // Register services
  * container.register('logger', () => new Logger('App'));
  * container.register('config', () => configManager);
  * container.register('audioIO', (c) => new AudioIO(c.get('config'), c.get('logger')));
  *
- * // 获取服务 (自动创建并缓存)
+ * // Get service (auto-create and cache)
  * const audioIO = container.get('audioIO');
  */
 export class AppContainer {
   /**
-   * 创建容器实例
+   * Create container instance
    */
   constructor() {
     /**
-     * 服务注册表
+     * Service registry
      * @type {Map<string, ServiceConfig>}
      */
     this.services = new Map();
 
     /**
-     * 正在创建的服务 (用于循环依赖检测)
+     * Services being created (for circular dependency detection)
      * @type {Set<string>}
      */
     this.creating = new Set();
 
     /**
-     * 调试模式
+     * Debug mode
      * @type {boolean}
      */
     this.debug = false;
   }
 
   /**
-   * 注册服务
+   * Register service
    *
-   * @param {string} name - 服务名称 (唯一标识符)
-   * @param {ServiceFactory} factory - 服务工厂函数
-   * @param {Object} options - 选项
-   * @param {boolean} [options.singleton=true] - 是否单例
-   * @param {string[]} [options.dependencies=[]] - 显式声明的依赖列表
-   * @throws {Error} 如果服务名已存在
+   * @param {string} name - Service name (unique identifier)
+   * @param {ServiceFactory} factory - Service factory function
+   * @param {Object} options - Options
+   * @param {boolean} [options.singleton=true] - Whether singleton
+   * @param {string[]} [options.dependencies=[]] - Explicitly declared dependency list
+   * @throws {Error} If service name already exists
    *
    * @example
    * container.register('logger', () => new Logger('App'));
@@ -94,7 +94,7 @@ export class AppContainer {
    */
   register(name, factory, options = {}) {
     if (this.services.has(name)) {
-      throw new Error(`[AppContainer] 服务 "${name}" 已存在,无法重复注册`);
+      throw new Error(`[AppContainer] Service "${name}" already exists, cannot re-register`);
     }
 
     if (typeof factory !== 'function') {

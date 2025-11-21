@@ -209,7 +209,43 @@ export const TIMING_CONSTANTS = {
    * 录音进度条更新频率（毫秒）
    * 用于平滑的进度显示
    */
-  RECORDING_PROGRESS_UPDATE_RATE: 50
+  RECORDING_PROGRESS_UPDATE_RATE: 50,
+
+  /**
+   * ScriptProcessor fallback timeout (ms)
+   * Wait time before falling back to ScriptProcessor if Worklet fails
+   */
+  SCRIPT_PROCESSOR_FALLBACK_TIMEOUT: 300,
+
+  /**
+   * Device enumeration retry delay (ms)
+   * Delay before retrying device enumeration
+   */
+  DEVICE_ENUM_RETRY_DELAY: 100,
+
+  /**
+   * Silence timeout (ms)
+   * Stop synthesis after this duration without valid pitch
+   */
+  SILENCE_TIMEOUT: 300,
+
+  /**
+   * Minimum update interval (ms)
+   * Minimum time between frequency updates
+   */
+  MIN_UPDATE_INTERVAL: 10,
+
+  /**
+   * Tone.js synthesis ramp time (seconds)
+   * Time for smooth parameter transitions
+   */
+  SYNTH_RAMP_TIME: 0.01,
+
+  /**
+   * Tone.js look-ahead time (seconds)
+   * Set to 0 for minimum latency
+   */
+  TONE_LOOK_AHEAD: 0
 };
 
 // ============================================================================
@@ -252,7 +288,19 @@ export const SYNTH_CONSTANTS = {
   /**
    * 音符 Release 时间（秒）
    */
-  NOTE_RELEASE_TIME: 0.1
+  NOTE_RELEASE_TIME: 0.1,
+
+  /**
+   * Frequency update threshold (ratio)
+   * Only update if frequency differs by this ratio (0.5%)
+   */
+  FREQUENCY_UPDATE_THRESHOLD: 0.005,
+
+  /**
+   * Estimated synthesis latency (ms)
+   * Used for latency calculation
+   */
+  SYNTHESIS_LATENCY_ESTIMATE: 15
 };
 
 // ============================================================================
