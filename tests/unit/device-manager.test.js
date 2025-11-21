@@ -108,11 +108,10 @@ describe('DeviceManager', () => {
 
     describe('_loadPreferences()', () => {
         it('should load saved preferences from localStorage and update store', () => {
-            localStorage.setItem('kazoo:lastInputDeviceId', 'input1');
-            localStorage.setItem('kazoo:lastOutputDeviceId', 'output1');
-            localStorage.setItem('kazoo:lastInputDeviceLabel', 'Mic 1');
-            localStorage.setItem('kazoo:lastOutputDeviceLabel', 'Speaker 1');
-
+                    localStorage.setItem('mambo:lastInputDeviceId', 'input1');
+                    localStorage.setItem('mambo:lastOutputDeviceId', 'output1');
+                    localStorage.setItem('mambo:lastInputDeviceLabel', 'Mic 1');
+                    localStorage.setItem('mambo:lastOutputDeviceLabel', 'Speaker 1');
             deviceManager._loadPreferences();
 
             const audioState = store.getState().audio;
@@ -132,14 +131,14 @@ describe('DeviceManager', () => {
     describe('_persistPreferences()', () => {
         it('should save input preferences to localStorage', () => {
             deviceManager._persistPreferences('input', 'newInputId', 'New Mic');
-            expect(localStorage.getItem('kazoo:lastInputDeviceId')).toBe('newInputId');
-            expect(localStorage.getItem('kazoo:lastInputDeviceLabel')).toBe('New Mic');
+            expect(localStorage.getItem('mambo:lastInputDeviceId')).toBe('newInputId');
+            expect(localStorage.getItem('mambo:lastInputDeviceLabel')).toBe('New Mic');
         });
 
         it('should save output preferences to localStorage', () => {
             deviceManager._persistPreferences('output', 'newOutputId', 'New Speaker');
-            expect(localStorage.getItem('kazoo:lastOutputDeviceId')).toBe('newOutputId');
-            expect(localStorage.getItem('kazoo:lastOutputDeviceLabel')).toBe('New Speaker');
+            expect(localStorage.getItem('mambo:lastOutputDeviceId')).toBe('newOutputId');
+            expect(localStorage.getItem('mambo:lastOutputDeviceLabel')).toBe('New Speaker');
         });
     });
 

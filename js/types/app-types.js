@@ -1,5 +1,5 @@
 /**
- * @fileoverview Central Type Definitions for Kazoo Proto
+ * @fileoverview Central Type Definitions for MAMBO
  * Serves as the "Contract" between Audio Core and UI.
  */
 

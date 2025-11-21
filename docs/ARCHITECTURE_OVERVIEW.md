@@ -1,4 +1,4 @@
-# Kazoo Proto Web - 项目架构全景
+# MAMBO Web - Architecture Overview
 
 **版本**: 0.3.0 (Performance First)
 **日期**: 2025-11-19

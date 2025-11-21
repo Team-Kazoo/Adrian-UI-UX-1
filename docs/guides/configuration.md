@@ -1,4 +1,4 @@
-# Kazoo Proto Web - 配置参数文档
+# MAMBO Web - Configuration Guide
 
 **版本**: Alpha 4
 **最后更新**: 2025-11-01
@@ -678,6 +678,6 @@ FFT Size vs Interval
 
 ---
 
-**维护者**: Kazoo Proto Team
+**Maintainer**: MAMBO Team
 **联系方式**: 请通过 GitHub Issues 提问
 **License**: MIT

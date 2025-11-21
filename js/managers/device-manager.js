@@ -53,10 +53,10 @@ class DeviceManager {
      */
     _loadPreferences() {
         try {
-            const savedInputId = localStorage.getItem('kazoo:lastInputDeviceId');
-            const savedOutputId = localStorage.getItem('kazoo:lastOutputDeviceId');
-            const savedInputLabel = localStorage.getItem('kazoo:lastInputDeviceLabel');
-            const savedOutputLabel = localStorage.getItem('kazoo:lastOutputDeviceLabel');
+            const savedInputId = localStorage.getItem('mambo:lastInputDeviceId');
+            const savedOutputId = localStorage.getItem('mambo:lastOutputDeviceId');
+            const savedInputLabel = localStorage.getItem('mambo:lastInputDeviceLabel');
+            const savedOutputLabel = localStorage.getItem('mambo:lastOutputDeviceLabel');
 
             const updates = {};
             if (savedInputId) updates.inputDeviceId = savedInputId;
@@ -82,8 +82,8 @@ class DeviceManager {
      */
     _persistPreferences(type, deviceId, label) {
         try {
-            const idKey = type === 'input' ? 'kazoo:lastInputDeviceId' : 'kazoo:lastOutputDeviceId';
-            const labelKey = type === 'input' ? 'kazoo:lastInputDeviceLabel' : 'kazoo:lastOutputDeviceLabel';
+            const idKey = type === 'input' ? 'mambo:lastInputDeviceId' : 'mambo:lastOutputDeviceId';
+            const labelKey = type === 'input' ? 'mambo:lastInputDeviceLabel' : 'mambo:lastOutputDeviceLabel';
             localStorage.setItem(idKey, deviceId || 'default');
             if (label) {
                 localStorage.setItem(labelKey, label);

@@ -22,7 +22,7 @@ import { TIMING_CONSTANTS } from './config/constants.js';
 import { store } from './state/store.js'; // Import StateStore singleton
 import { SafeUI } from './utils/safe-ui.js'; // Import SafeUI wrapper
 
-class KazooApp {
+class MamboApp {
     /**
      * Step 2: Dependency Injection Constructor
      * @param {Object} services - Injected services object
@@ -155,7 +155,7 @@ class KazooApp {
      * Step 2: Use injected configManager
      */
     async initialize() {
-        console.log('Initializing Kazoo App (No-Calibration Version)...');
+        console.log('Initializing MAMBO (No-Calibration Version)...');
 
         // Step 2: Use injected configManager (fallback to global if not injected)
         const manager = this.configManager || configManager;
@@ -866,10 +866,10 @@ class KazooApp {
 
     _loadDevicePreferences() {
         try {
-            const savedInput = localStorage.getItem('kazoo:lastInputDeviceId');
-            const savedOutput = localStorage.getItem('kazoo:lastOutputDeviceId');
-            const savedInputLabel = localStorage.getItem('kazoo:lastInputDeviceLabel');
-            const savedOutputLabel = localStorage.getItem('kazoo:lastOutputDeviceLabel');
+            const savedInput = localStorage.getItem('mambo:lastInputDeviceId');
+            const savedOutput = localStorage.getItem('mambo:lastOutputDeviceId');
+            const savedInputLabel = localStorage.getItem('mambo:lastInputDeviceLabel');
+            const savedOutputLabel = localStorage.getItem('mambo:lastOutputDeviceLabel');
             if (savedInput) this.selectedInputId = savedInput;
             if (savedOutput) this.selectedOutputId = savedOutput;
             if (savedInputLabel) this.lastKnownInputLabel = savedInputLabel;
@@ -881,8 +881,8 @@ class KazooApp {
 
     _persistDevicePreference(type, deviceId, label) {
         try {
-            const idKey = type === 'input' ? 'kazoo:lastInputDeviceId' : 'kazoo:lastOutputDeviceId';
-            const labelKey = type === 'input' ? 'kazoo:lastInputDeviceLabel' : 'kazoo:lastOutputDeviceLabel';
+            const idKey = type === 'input' ? 'mambo:lastInputDeviceId' : 'mambo:lastOutputDeviceId';
+            const labelKey = type === 'input' ? 'mambo:lastInputDeviceLabel' : 'mambo:lastOutputDeviceLabel';
             localStorage.setItem(idKey, deviceId || 'default');
             if (label) {
                 localStorage.setItem(labelKey, label);
@@ -1080,13 +1080,13 @@ class KazooApp {
 
     async start() {
         try {
-            console.log(`Starting Kazoo Proto in ${this.useContinuousMode ? 'Continuous' : 'Legacy'} mode...`);
+            console.log(`Starting MAMBO in ${this.useContinuousMode ? 'Continuous' : 'Legacy'} mode...`);
 
             this._captureDeviceSelection();
             await this._initializeAudioSystem();
             this._updateUIForStarted();
 
-            console.log('✓ Kazoo Proto is running!');
+            console.log('✓ MAMBO is running!');
 
         } catch (error) {
             this._handleStartupError(error);
@@ -1285,42 +1285,44 @@ class KazooApp {
     /**
      * Stop Playback
      */
-    stop() {
+    async stop() {
+        if (!this.isRunning) return;
+
+        console.log('Stopping MAMBO...');
         this.isRunning = false;
-        if (this.audioLoopController) this.audioLoopController.stop();
 
-        // Stop Audio System
+        if (this.audioLoopController) {
+            this.audioLoopController.stop();
+        }
+
         if (this.audioIO) {
-            this.audioIO.stop();
-        }
-
-        // Stop Current Engine
-        if (this.currentEngine) {
-            if (this.useContinuousMode) {
-                this.currentEngine.stop();
-            }
-            else {
-                this.currentEngine.stopNote();
+            try {
+                await this.audioIO.stop();
+            } catch (e) {
+                console.error('Error stopping audio:', e);
             }
         }
 
-        // Update UI using SafeUI
+        // Reset UI using SafeUI
         this.safeUI.batchUpdate({
             startBtn: { show: true },
             stopBtn: { hide: true },
+            statusBar: { hide: true },
+            visualizer: { hide: true },
+            recordingStatus: {
+                setText: 'Standby',
+                removeClass: ['status-ready', 'status-error']
+            },
             systemStatus: {
-                setText: 'Stopped',
+                setText: 'Ready',
                 removeClass: 'active'
             },
-            recordingStatus: {
-                setText: 'Ready'
-            },
             recordingHelper: {
-                setText: 'No setup required • Works in your browser'
+                setText: 'Ensure your microphone is connected. Use headphones to avoid feedback.'
             }
         });
 
-        console.log('Kazoo Proto stopped');
+        console.log('MAMBO stopped');
     }
 
 
@@ -1545,7 +1547,7 @@ container.register('app', (c) => {
                 };
 
                 console.log('[Container]  服务已注入:', Object.keys(services));
-                return new KazooApp(services);
+                return new MamboApp(services);
             }, {
                 singleton: true,
                 dependencies: ['config', 'configManager', 'pitchDetector', 'performanceMonitor',

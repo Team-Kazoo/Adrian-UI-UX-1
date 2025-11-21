@@ -1,5 +1,5 @@
 /**
- * Kazoo Proto Web - 集中式配置管理
+ * MAMBO Web - Centralized Configuration Management
  *
  * 基于现代软件工程最佳实践:
  * - Single Source of Truth (单一数据源)

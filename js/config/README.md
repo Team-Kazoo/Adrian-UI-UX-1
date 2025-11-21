@@ -1,6 +1,6 @@
 # 配置系统文档
 
-**Kazoo Proto Web - 集中式配置管理系统**
+**MAMBO Web - Centralized Configuration Management**
 
 ---
 
@@ -411,5 +411,5 @@ const config = configManager.load({
 ---
 
 **版本**: Alpha 4
-**维护**: Kazoo Proto Team
+**Maintainer**: MAMBO Team
 **License**: MIT

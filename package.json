@@ -1,8 +1,8 @@
 {
-  "name": "kazoo-proto-web",
-  "version": "0.4.0",
+  "name": "mambo-web",
+  "version": "0.5.0",
   "type": "module",
-  "description": "实时人声到乐器音色转换Web应用",
+  "description": "MAMBO - Real-time neural vocal synthesis engine bridging Web Audio and embedded hardware",
   "main": "index.html",
   "scripts": {
     "dev": "npx serve . -p 3000",

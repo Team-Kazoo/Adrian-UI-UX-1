@@ -1,6 +1,6 @@
 # Documentation Index
 
-Documentation for Kazoo Proto Web v0.4.0 - Real-time voice-to-instrument system.
+Documentation for MAMBO Web v0.5.0 - Real-time voice-to-instrument system.
 
 ## Quick Links
 
