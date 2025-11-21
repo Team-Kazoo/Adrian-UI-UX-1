@@ -34,6 +34,13 @@ export class MamboView {
         this.audioInputSelect = this.doc.getElementById('audioInputSelect');
         this.audioOutputSelect = this.doc.getElementById('audioOutputSelect');
         this.refreshDevicesBtn = this.doc.getElementById('refreshDevicesBtn');
+
+        // Settings Modal Elements
+        this.settingsBtn = this.doc.getElementById('settingsBtn');
+        this.settingsModal = this.doc.getElementById('settingsModal');
+        this.settingsBackdrop = this.doc.getElementById('settingsBackdrop');
+        this.settingsPanel = this.doc.getElementById('settingsPanel');
+        this.closeSettingsBtn = this.doc.getElementById('closeSettingsBtn');
     }
 
     /**
@@ -457,6 +464,69 @@ export class MamboView {
             ghostOption.disabled = true;
             selectElement.appendChild(ghostOption);
             selectElement.value = selectedValue;
+        }
+    }
+
+    /**
+     * Bind Settings Modal UI events
+     * @param {object} handlers
+     * @param {() => void} handlers.onOpenSettings
+     * @param {() => void} handlers.onCloseSettings
+     */
+    bindSettingsUI(handlers) {
+        if (this.settingsBtn && handlers.onOpenSettings) {
+            this.settingsBtn.addEventListener('click', handlers.onOpenSettings);
+        }
+
+        if (this.closeSettingsBtn && handlers.onCloseSettings) {
+            this.closeSettingsBtn.addEventListener('click', handlers.onCloseSettings);
+        }
+
+        if (this.settingsBackdrop && handlers.onCloseSettings) {
+            this.settingsBackdrop.addEventListener('click', handlers.onCloseSettings);
+        }
+    }
+
+    /**
+     * Render Settings Modal State
+     * @param {boolean} isOpen - Whether the modal should be open
+     */
+    renderSettingsModal(isOpen) {
+        if (!this.settingsModal) return;
+
+        if (isOpen) {
+            // Open Animation
+            this.settingsModal.classList.remove('hidden');
+
+            // Prevent background scrolling
+            document.body.classList.add('overflow-hidden');
+
+            // Trigger reflow for animation
+            void this.settingsModal.offsetWidth;
+
+            // Animate in
+            if (this.settingsBackdrop) {
+                this.settingsBackdrop.classList.remove('opacity-0');
+            }
+            if (this.settingsPanel) {
+                this.settingsPanel.classList.remove('translate-x-full');
+            }
+        } else {
+            // Close Animation
+            if (this.settingsBackdrop) {
+                this.settingsBackdrop.classList.add('opacity-0');
+            }
+            if (this.settingsPanel) {
+                this.settingsPanel.classList.add('translate-x-full');
+            }
+
+            // Remove scroll lock
+            document.body.classList.remove('overflow-hidden');
+
+            // Wait for transition, then hide
+            setTimeout(() => {
+                this.settingsModal.classList.add('hidden');
+            }, 300);
         }
     }
 }

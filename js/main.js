@@ -134,11 +134,7 @@ class MamboApp {
             speedValue: document.getElementById('speedValue'),
 
             // Settings Modal
-            settingsBtn: document.getElementById('settingsBtn'),
-            settingsModal: document.getElementById('settingsModal'),
-            settingsBackdrop: document.getElementById('settingsBackdrop'),
-            closeSettingsBtn: document.getElementById('closeSettingsBtn'),
-            settingsPanel: document.getElementById('settingsPanel'),
+            // Settings Modal elements now cached in MamboView
 
             // Effects UI
             reverbSlider: document.getElementById('reverbSlider'),
@@ -518,40 +514,20 @@ class MamboApp {
         }
     }
 
+    /**
+     * Setup Settings Modal UI (State-Driven)
+     * @private
+     */
     _setupSettingsUI() {
-        const openSettings = () => {
-            if (this.ui.settingsModal) {
-                this.ui.settingsModal.classList.remove('hidden');
-                // Prevent background scrolling
-                document.body.classList.add('overflow-hidden');
-                
-                // Trigger reflow
-                void this.ui.settingsModal.offsetWidth;
-                // Animate in
-                if (this.ui.settingsBackdrop) this.ui.settingsBackdrop.classList.remove('opacity-0');
-                if (this.ui.settingsPanel) this.ui.settingsPanel.classList.remove('translate-x-full');
+        // Bind UI Events -> Controller Actions
+        this.view.bindSettingsUI({
+            onOpenSettings: () => {
+                this.view.renderSettingsModal(true);
+            },
+            onCloseSettings: () => {
+                this.view.renderSettingsModal(false);
             }
-        };
-
-        const closeSettings = () => {
-            if (this.ui.settingsModal) {
-                // Animate out
-                if (this.ui.settingsBackdrop) this.ui.settingsBackdrop.classList.add('opacity-0');
-                if (this.ui.settingsPanel) this.ui.settingsPanel.classList.add('translate-x-full');
-                
-                // Remove scroll lock
-                document.body.classList.remove('overflow-hidden');
-
-                // Wait for transition
-                setTimeout(() => {
-                    this.ui.settingsModal.classList.add('hidden');
-                }, 300);
-            }
-        };
-
-        if (this.ui.settingsBtn) this.ui.settingsBtn.addEventListener('click', openSettings);
-        if (this.ui.closeSettingsBtn) this.ui.closeSettingsBtn.addEventListener('click', closeSettings);
-        if (this.ui.settingsBackdrop) this.ui.settingsBackdrop.addEventListener('click', closeSettings);
+        });
     }
 
     /**
