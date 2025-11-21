@@ -1,114 +1,147 @@
-# Kazoo Proto Web
+<div align="center">
+  <h1>🎵 Kazoo Proto</h1>
+  <p>
+    <strong>Real-time Voice-to-Instrument Synthesis Engine</strong>
+  </p>
+  <p>
+    Transform your voice into professional instruments directly in the browser with zero latency.
+  </p>
 
-Real-time voice-to-instrument system powered by Web Audio API.
+  <p>
+    <a href="#features">Features</a> •
+    <a href="#architecture">Architecture</a> •
+    <a href="#getting-started">Getting Started</a> •
+    <a href="#tech-stack">Tech Stack</a> •
+    <a href="#contributing">Contributing</a>
+  </p>
 
-Sing or hum into your microphone, and transform your voice into virtual instruments in real-time with expressive features like vibrato, brightness, and articulation.
+  <br>
 
-## Quick Start
+  <img src="image.png" alt="Kazoo Proto Interface" width="100%">
+</div>
 
-```bash
-npm install
-npm start
+<br>
+
+## 🚀 Introduction
+
+**Kazoo Proto** is a high-performance web application that leverages the Web Audio API to transform vocal input into synthesized instrument sounds in real-time. Unlike traditional pitch-to-MIDI converters, Kazoo Proto uses a custom DSP pipeline running on `AudioWorklet` to ensure sub-20ms latency, preserving the nuanced expression of the human voice including vibrato, slides, and dynamics.
+
+Whether you want to sound like a saxophone, a violin, or a futuristic synthesizer, Kazoo Proto provides an immersive, "liquid" playing experience that feels like a real instrument.
+
+## ✨ Key Features
+
+-   **Zero-Latency Core**: Built on `AudioWorklet` with a custom ring-buffer architecture to decouple audio processing from the main thread, achieving <20ms end-to-end latency.
+-   **Dual Engine Architecture**:
+    -   **Continuous Mode**: Tracks precise frequency changes for smooth slides and vibrato (Portamento / Glissando).
+    -   **Legacy Mode**: Quantizes pitch to the nearest semitone for a classic keyboard/sampler feel.
+-   **Pro-Grade DSP**:
+    -   **YIN Algorithm**: Optimized implementation for accurate, monophonic pitch detection down to 80Hz.
+    -   **FastFFT**: Custom O(N log N) FFT implementation for spectral feature extraction (Brightness, Breathiness).
+    -   **Liquid Visualizer**: 60fps hardware-accelerated canvas rendering for real-time pitch feedback.
+-   **Smart Auto-Tune**: Integrated pitch correction with adjustable strength and speed, supporting multiple scales (Chromatic, Major, Minor, Pentatonic, Blues).
+-   **Expressive Synthesis**: Maps vocal volume and timbre to synth parameters (Cutoff, Resonance, Envelope) for dynamic expression.
+-   **Privacy First**: All processing happens locally in the browser. No audio data is ever sent to a server.
+
+## 🏗 Architecture
+
+Kazoo Proto follows a modern, decoupled architecture designed for performance and maintainability.
+
+### Core Components
+
+1.  **AudioIO Layer**: A robust abstraction over the Web Audio API that handles browser compatibility, sample rate conversion, and graceful degradation (Worklet -> ScriptProcessor).
+2.  **AudioWorklet (The Engine)**: Runs in a separate thread. Handles DSP tasks:
+    -   Pitch Detection (YIN)
+    -   Spectral Analysis (FFT)
+    -   Onset/Transient Detection
+3.  **AudioLoopController**: The central nervous system. It receives `PitchFrame` data from the Worklet and orchestrates the synthesis engine and visualizer, ensuring the UI never blocks audio.
+4.  **State Management**: A centralized, Flux-like `StateStore` manages application state (settings, active devices, status), promoting a unidirectional data flow.
+5.  **VisualizerManager**: A decoupled rendering engine that draws the "Liquid Ribbon" visualization using `requestAnimationFrame`.
+
+### Data Flow
+
+```mermaid
+graph LR
+    A[Microphone] --> B(AudioWorklet)
+    B -->|PitchFrame| C{AudioLoopController}
+    C -->|Control Signals| D[Synth Engine]
+    C -->|Visual Data| E[Visualizer]
+    D --> F[Speakers]
 ```
 
-Open `http://localhost:3000` in your browser.
+## 🛠 Tech Stack
 
-## Features
+-   **Frontend**: Vanilla JavaScript (ES Modules) for maximum performance and zero compile-time overhead.
+-   **Styling**: Tailwind CSS for utility-first design, enhanced with custom CSS for Apple-style aesthetics (Glassmorphism).
+-   **Audio**: Web Audio API, Tone.js (for synthesis graph management).
+-   **Testing**: Vitest for unit and integration testing.
+-   **Tooling**: Node.js, npm.
 
-- **Real-time Pitch Detection**: YIN algorithm running in AudioWorklet for ultra-low latency
-- **6 Virtual Instruments**: Saxophone, Violin, Piano, Flute, Guitar, Synthesizer
-- **Expressive Mapping**: Volume, timbre (brightness), breathiness, articulation detection
-- **Auto-Tune**: Scale quantization with adjustable retune speed
-- **Low Latency**: ~50ms end-to-end latency (target achieved!)
-- **Device Selection**: Choose input/output audio devices
+## 🏁 Getting Started
 
-## Architecture
+### Prerequisites
 
-```text
-Microphone → AudioWorklet → YIN Detection → Feature Extraction → Synthesizer → Output
-             (128 samples)    (pitch/clarity)  (volume/timbre)    (Tone.js)
-```
+-   Node.js (v14 or higher)
+-   npm (v6 or higher)
+-   A modern web browser (Chrome/Edge recommended for best AudioWorklet performance)
 
-### Key Components
+### Installation
 
-- **AudioIO** (`js/audio-io.js`): Audio I/O abstraction with Worklet + ScriptProcessor fallback
-- **PitchDetector** (`js/pitch-detector.js`): YIN algorithm wrapper
-- **ContinuousSynth** (`js/continuous-synth.js`): Real-time frequency tracking synthesizer
-- **ExpressiveFeatures** (`js/expressive-features.js`): Feature extraction pipeline
-- **AppContainer** (`js/core/app-container.js`): Dependency injection container
+1.  **Clone the repository**
+    ```bash
+    git clone https://github.com/zimingwang/Adrian-UI-UX-1.git
+    cd Adrian-UI-UX-1
+    ```
 
-## Development
+2.  **Install dependencies**
+    ```bash
+    npm install
+    ```
 
-### Commands
+3.  **Start the development server**
+    ```bash
+    npm start
+    ```
+    The application will be available at `http://localhost:3000`.
 
-```bash
-npm test              # Run tests (Vitest)
-npm run test:watch    # Watch mode
-npm run test:coverage # Coverage report
-npm start             # Dev server
-```
+4.  **Run tests** (Optional)
+    ```bash
+    npm test
+    ```
 
-### Browser Console Debugging
+## 📖 Usage Guide
 
-```javascript
-// Check latency statistics
-window.app.getLatencyStats()
+1.  **Select an Instrument**: Choose from a variety of presets like Flute, Saxophone, Violin, or Cello.
+2.  **Start Engine**: Click the "Start Engine" button. Grant microphone permissions when prompted.
+    *   *Tip: Use headphones to prevent feedback loops!*
+3.  **Play**: Hum, sing, or whistle into your microphone. The visualizer will react instantly.
+4.  **Adjust Settings**:
+    *   **Auto-Tune**: Toggle pitch correction and select a scale/key.
+    *   **Effects**: Add Reverb or Delay for atmosphere.
+    *   **Mode**: Switch between "Continuous" (smooth) and "Legacy" (stepped) modes.
 
-// Verify Worklet mode (should be 'worklet', not 'script-processor')
-window.container.get('audioIO').mode
+## 🛣 Roadmap
 
-// List all registered services
-window.container.getServiceNames()
-```
+-   [x] **Phase 1: Core DSP & AudioWorklet** - Stable low-latency tracking.
+-   [x] **Phase 2: UI/UX Modernization** - Glassmorphism design & Liquid Visualizer.
+-   [ ] **Phase 3: MIDI Support** - Export MIDI data to DAWs.
+-   [ ] **Phase 4: VST/AU Plugin** - Wrap as a native desktop plugin.
+-   [ ] **Phase 5: Polyphony** - Experimental polyphonic voice tracking.
 
-## Performance
+## 🤝 Contributing
 
-| Metric | Target | Current | Status |
-|--------|--------|---------|--------|
-| Latency | < 50ms | ~50ms | ✅ Achieved |
-| Test Coverage | 40% | ~10% | 🔄 In Progress |
-| Audio Mode | Worklet | Worklet | ✅ Optimized |
+We welcome contributions from the community! Whether it's a bug fix, a new feature, or a documentation improvement, your help is appreciated.
 
-## Browser Support
+1.  Fork the Project
+2.  Create your Feature Branch (`git checkout -b feat/AmazingFeature`)
+3.  Commit your Changes (`git commit -m 'feat: Add some AmazingFeature'`)
+4.  Push to the Branch (`git push origin feat/AmazingFeature`)
+5.  Open a Pull Request
 
-- Chrome/Edge 66+
-- Firefox 76+
-- Safari 14.1+
+## 📄 License
 
-Requires HTTPS or localhost for AudioWorklet support.
+Distributed under the MIT License. See `LICENSE` for more information.
 
-## Project Status
-
-**Version**: 0.4.0 (Synthesis Optimization)
-**Branch**: feat/auto-tune
-
-See [PROJECT_STATUS.md](PROJECT_STATUS.md) for detailed development status.
-
-## Documentation
-
-- [Architecture Overview](docs/ARCHITECTURE_OVERVIEW.md)
-- [Latency Optimization](docs/LATENCY_OPTIMIZATION.md)
-- [Configuration Guide](docs/guides/configuration.md)
-- [Troubleshooting](docs/guides/troubleshooting.md)
-- [Full Documentation Index](docs/README.md)
-
-## Development Guidelines
-
-See [CLAUDE.md](CLAUDE.md) for:
-
-- Dependency injection patterns
-- Testing requirements
-- Performance targets
-- Commit conventions
-
-## License
-
-MIT
-
-## Credits
-
-Built with:
-
-- [Tone.js](https://tonejs.github.io/) - Web Audio framework
-- [pitchfinder](https://github.com/peterkhayes/pitchfinder) - YIN algorithm implementation
-- Web Audio API - Low-latency audio processing
+**Authors**:
+*   **Ziming Wang**
+*   **Chuyue Gong**
+*   **Tianxing Chang**
