@@ -9,3 +9,4 @@ build/
 coverage/
 .vitest/
 yarn.lock
+.gemini/
