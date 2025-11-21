@@ -149,6 +149,18 @@ We welcome contributions from the community! Whether it's a bug fix, a new featu
 4.  Push to the Branch (`git push origin feat/AmazingFeature`)
 5.  Open a Pull Request
 
+## 🚀 Join Our Mission
+
+We are a startup team transitioning from a software MVP to a physical, embedded instrument. We are looking for passionate engineers and designers to help us build the future of expressive synthesis.
+
+**We are hiring:**
+
+*   **Embedded Systems Engineer (Linux/RTOS)**: Lead the migration from Web Audio to embedded platforms. You will evaluate and prototype on architectures like **NVIDIA Jetson**, **Raspberry Pi 5**, and high-performance **ESP32** chips, optimizing low-latency audio drivers and C++ DSP pipelines.
+*   **Industrial Designer**: Define the physical form factor, ergonomics, and aesthetic language of the standalone instrument.
+*   **Neural Audio Researcher**: Optimize deep learning models (RAVE, DDSP) for real-time inference on edge devices.
+
+If you are excited about music technology and hardware, contact us at **[zwangnv@connect.ust.hk](mailto:zwangnv@connect.ust.hk)**.
+
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for more information.
