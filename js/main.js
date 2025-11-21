@@ -95,6 +95,7 @@ class KazooApp {
 
             // Status and Visualization
             statusBar: document.getElementById('statusBar'),
+            visualizer: document.getElementById('visualizer'),
             systemStatus: document.getElementById('systemStatus'),
             latency: document.getElementById('latency'),
             confidence: document.getElementById('confidence'),
@@ -963,11 +964,12 @@ class KazooApp {
             // Update UI
             this.isRunning = true;
             if (this.audioLoopController) this.audioLoopController.start();
-            
-            this.ui.startBtn.classList.add('hidden');
-            this.ui.stopBtn.classList.remove('hidden');
-            this.ui.statusBar.classList.remove('hidden');
-            this.ui.visualizer.classList.remove('hidden');
+
+            // Safely update UI elements (check for null)
+            if (this.ui.startBtn) this.ui.startBtn.classList.add('hidden');
+            if (this.ui.stopBtn) this.ui.stopBtn.classList.remove('hidden');
+            if (this.ui.statusBar) this.ui.statusBar.classList.remove('hidden');
+            if (this.ui.visualizer) this.ui.visualizer.classList.remove('hidden');
 
             // 🔥 [UX FIX] Force visualizer resize to prevent blank canvas on show
             // Canvas size is 0 when initialized in display:none state
@@ -992,12 +994,14 @@ class KazooApp {
             // Show user-friendly error message
             this._showError(error.message || 'Startup failed. Check microphone permissions and browser compatibility.');
 
-            // Reset UI state
-            this.ui.startBtn.classList.remove('hidden');
-            this.ui.stopBtn.classList.add('hidden');
-            this.ui.recordingStatus.textContent = 'Error';
-            this.ui.recordingStatus.classList.remove('status-ready');
-            this.ui.recordingStatus.classList.add('status-error');
+            // Reset UI state (with null checks)
+            if (this.ui.startBtn) this.ui.startBtn.classList.remove('hidden');
+            if (this.ui.stopBtn) this.ui.stopBtn.classList.add('hidden');
+            if (this.ui.recordingStatus) {
+                this.ui.recordingStatus.textContent = 'Error';
+                this.ui.recordingStatus.classList.remove('status-ready');
+                this.ui.recordingStatus.classList.add('status-error');
+            }
         }
     }
 
@@ -1156,6 +1160,13 @@ class KazooApp {
      */
     async _initializeEngines(audioContext, bufferSize = 2048, mode = 'script-processor') {
         // Step 2: Use injected services (Container ensures injection, no fallback needed)
+
+        // Initialize SynthManager if available (syncs with Store state)
+        if (this.synthManager) {
+            this.synthManager.init();
+            console.log('[Main] SynthManager initialized and synced with Store');
+        }
+
         // Select engine
         if (this.useContinuousMode) {
             this.currentEngine = this.continuousSynthEngine;
@@ -1242,13 +1253,15 @@ class KazooApp {
             }
         }
 
-        // Update UI
-        this.ui.startBtn.classList.remove('hidden');
-        this.ui.stopBtn.classList.add('hidden');
-        this.ui.systemStatus.textContent = 'Stopped';
-        this.ui.systemStatus.classList.remove('active');
-        this.ui.recordingStatus.textContent = 'Ready';
-        this.ui.recordingHelper.textContent = 'No setup required • Works in your browser';
+        // Update UI (with null checks)
+        if (this.ui.startBtn) this.ui.startBtn.classList.remove('hidden');
+        if (this.ui.stopBtn) this.ui.stopBtn.classList.add('hidden');
+        if (this.ui.systemStatus) {
+            this.ui.systemStatus.textContent = 'Stopped';
+            this.ui.systemStatus.classList.remove('active');
+        }
+        if (this.ui.recordingStatus) this.ui.recordingStatus.textContent = 'Ready';
+        if (this.ui.recordingHelper) this.ui.recordingHelper.textContent = 'No setup required • Works in your browser';
 
         console.log('Kazoo Proto stopped');
     }
