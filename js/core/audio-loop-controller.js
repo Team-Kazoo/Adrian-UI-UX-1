@@ -220,19 +220,41 @@ class AudioLoopController {
 
     /**
      * Get latency statistics
+     * Note: These measurements are for Worklet → Main Thread only.
+     * Actual end-to-end latency includes synthesis output delay (~10-20ms additional).
+     * @returns {Object} Latency stats in milliseconds
      */
     getLatencyStats() {
         if (this.latencyMeasurements.length === 0) {
-            return { min: 0, max: 0, avg: 0, count: 0 };
+            return {
+                min: 0,
+                max: 0,
+                avg: 0,
+                p50: 0,
+                p95: 0,
+                count: 0,
+                note: 'No measurements yet. Start audio to measure latency.'
+            };
         }
         const sorted = [...this.latencyMeasurements].sort((a, b) => a - b);
+
+        // Add estimated synthesis output latency (conservative estimate)
+        const synthesisLatencyEstimate = 15; // ms
+
         return {
-            min: sorted[0].toFixed(1),
-            max: sorted[sorted.length - 1].toFixed(1),
-            avg: (sorted.reduce((a, b) => a + b, 0) / sorted.length).toFixed(1),
-            p50: sorted[Math.floor(sorted.length * 0.5)].toFixed(1),
-            p95: sorted[Math.floor(sorted.length * 0.95)].toFixed(1),
-            count: sorted.length
+            min: parseFloat(sorted[0].toFixed(1)),
+            max: parseFloat(sorted[sorted.length - 1].toFixed(1)),
+            avg: parseFloat((sorted.reduce((a, b) => a + b, 0) / sorted.length).toFixed(1)),
+            p50: parseFloat(sorted[Math.floor(sorted.length * 0.5)].toFixed(1)),
+            p95: parseFloat(sorted[Math.floor(sorted.length * 0.95)].toFixed(1)),
+            count: sorted.length,
+            // Provide estimated total latency
+            estimatedTotal: {
+                min: parseFloat((sorted[0] + synthesisLatencyEstimate).toFixed(1)),
+                avg: parseFloat((sorted.reduce((a, b) => a + b, 0) / sorted.length + synthesisLatencyEstimate).toFixed(1)),
+                p95: parseFloat((sorted[Math.floor(sorted.length * 0.95)] + synthesisLatencyEstimate).toFixed(1))
+            },
+            note: 'Measured: Worklet→Main Thread. Estimated Total includes synthesis output (~15ms).'
         };
     }
 }

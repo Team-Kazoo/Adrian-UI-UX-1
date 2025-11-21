@@ -15,9 +15,12 @@ class SynthManager {
     constructor({ continuous, legacy }) {
         this.continuousEngine = continuous;
         this.legacyEngine = legacy;
-        
+
         // Default to continuous based on store initial state or fallback
-        this.activeEngine = this.continuousEngine; 
+        this.activeEngine = this.continuousEngine;
+
+        // Debug mode (only in development)
+        this.debug = typeof window !== 'undefined' && window.location.hostname === 'localhost';
     }
 
     /**
@@ -47,13 +50,15 @@ class SynthManager {
      * @param {boolean} isContinuous - True for Continuous Engine, False for Legacy
      */
     setMode(isContinuous) {
-        // 1. Stop the currently running engine to prevent stuck notes
-        // Note: We assume the app controller handles the main "Start/Stop" flow,
-        // but swapping engines mid-flight requires care.
-        if (this.activeEngine && this.activeEngine.stop) {
-             // If we were playing, we might want to stop sound. 
-             // But for now, let's just swap the reference.
-             // The Main Controller handles the actual audio graph connection usually.
+        // 1. Gracefully stop the currently running engine to prevent stuck notes
+        if (this.activeEngine && typeof this.activeEngine.stop === 'function') {
+            // Only stop if actually playing to avoid unnecessary audio glitches
+            if (this.activeEngine.isPlaying) {
+                this.activeEngine.stop();
+                if (this.debug) {
+                    console.log('[SynthManager] Stopped previous engine before mode switch');
+                }
+            }
         }
 
         // 2. Swap Reference
@@ -64,7 +69,9 @@ class SynthManager {
             synth: { ...store.getState().synth, continuousMode: isContinuous }
         });
 
-        console.log(`[SynthManager] Mode set to: ${isContinuous ? 'Continuous' : 'Legacy'}`);
+        if (this.debug) {
+            console.log(`[SynthManager] Mode set to: ${isContinuous ? 'Continuous' : 'Legacy'}`);
+        }
     }
 
     /**
@@ -79,8 +86,9 @@ class SynthManager {
             try {
                 this.activeEngine.changeInstrument(instrumentId);
             } catch (err) {
+                // Always log errors
                 console.error(`[SynthManager] Failed to change instrument to ${instrumentId}:`, err);
-                return; 
+                return;
             }
         }
 

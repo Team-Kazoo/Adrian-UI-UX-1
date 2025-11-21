@@ -45,7 +45,8 @@ class StateStore {
         };
 
         this.listeners = new Set();
-        this.debug = true;
+        // Only enable debug in development
+        this.debug = typeof window !== 'undefined' && window.location.hostname === 'localhost';
     }
 
     /**

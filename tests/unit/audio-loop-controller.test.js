@@ -208,15 +208,19 @@ describe('AudioLoopController', () => {
 
         it('should calculate correct statistics', () => {
             controller.latencyMeasurements = [10, 20, 30, 40, 50]; // Sorted
-            
+
             const stats = controller.getLatencyStats();
-            
+
             expect(stats.count).toBe(5);
-            expect(stats.min).toBe('10.0');
-            expect(stats.max).toBe('50.0');
-            expect(stats.avg).toBe('30.0');
-            expect(stats.p50).toBe('30.0'); // Median
-            expect(stats.p95).toBe('50.0'); // Index floor(5 * 0.95) = 4 -> 50
+            expect(stats.min).toBe(10);
+            expect(stats.max).toBe(50);
+            expect(stats.avg).toBe(30);
+            expect(stats.p50).toBe(30); // Median
+            expect(stats.p95).toBe(50); // Index floor(5 * 0.95) = 4 -> 50
+            // Check new estimated total field
+            expect(stats.estimatedTotal).toBeDefined();
+            expect(stats.estimatedTotal.avg).toBeCloseTo(45, 0); // 30 + 15ms synthesis latency
+            expect(stats.note).toContain('Worklet');
         });
     });
 });
