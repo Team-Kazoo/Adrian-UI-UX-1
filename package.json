@@ -13,6 +13,13 @@
     "test:coverage": "vitest run --coverage",
     "test:legacy": "node tests/run-all-tests.js",
     "test:legacy:report": "node tests/run-all-tests.js --report",
+    "typecheck": "tsc --noEmit",
+    "typecheck:watch": "tsc --noEmit --watch",
+    "validate": "npm run typecheck && npm test",
+    "lighthouse": "lhci autorun",
+    "lighthouse:desktop": "lhci autorun --collect.settings.preset=desktop",
+    "lighthouse:mobile": "lhci autorun --collect.settings.preset=mobile",
+    "perf": "npm run lighthouse:desktop",
     "deploy": "vercel --prod"
   },
   "repository": {
@@ -36,9 +43,11 @@
     "tone": "^15.1.22"
   },
   "devDependencies": {
+    "@lhci/cli": "^0.14.0",
     "@vitest/ui": "^4.0.6",
     "happy-dom": "^20.0.10",
     "serve": "^14.2.1",
+    "typescript": "^5.9.3",
     "vitest": "^4.0.6"
   },
   "engines": {

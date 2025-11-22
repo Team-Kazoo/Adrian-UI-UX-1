@@ -1,3 +1,22 @@
 {
-    "idf.pythonInstallPath": "/Users/zimingwang/.pyenv/shims/python"
+  "js/ts.implicitProjectConfig.checkJs": false,
+  "javascript.validate.enable": true,
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "javascript.suggest.autoImports": true,
+  "javascript.suggest.paths": true,
+  "javascript.suggest.completeFunctionCalls": true,
+  "editor.formatOnSave": false,
+  "editor.codeActionsOnSave": {
+    "source.fixAll": "never",
+    "source.organizeImports": "never"
+  },
+  "files.associations": {
+    "*.js": "javascript"
+  },
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true
+  }
 }

@@ -1,0 +1,59 @@
+{
+  "compilerOptions": {
+    // Enable type checking for JavaScript files
+    "allowJs": true,
+    "checkJs": false,  // 暂时关闭严格检查，避免大量错误
+
+    // Don't emit files - we're only using TypeScript for type checking
+    "noEmit": true,
+
+    // Module system
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "target": "ES2022",
+
+    // Relaxed type checking for gradual migration
+    "strict": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "strictFunctionTypes": false,
+    "strictBindCallApply": false,
+    "strictPropertyInitialization": false,
+    "noImplicitThis": false,
+    "alwaysStrict": false,
+
+    // Additional checks (disabled for now)
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+    "noImplicitReturns": false,
+    "noFallthroughCasesInSwitch": false,
+
+    // Library and DOM
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+
+    // Module resolution
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "resolveJsonModule": true,
+
+    // Source maps for debugging
+    "sourceMap": false,
+
+    // Base URL for absolute imports
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["js/*"]
+    }
+  },
+  "include": [
+    "js/**/*",
+    "tests/**/*"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "build",
+    "js/lib/**/*"  // Exclude third-party libraries
+  ]
+}

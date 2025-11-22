@@ -524,7 +524,7 @@ class MamboApp {
         // 1. Bind UI Events -> Controller Actions
         this.view.bindDeviceSelectUI({
             onInputDeviceChange: async (deviceId) => {
-                const selectedLabel = this.view.getSelectedDeviceLabel('input');
+                const selectedLabel = this.ui.audioInputSelect?.selectedOptions[0]?.textContent || 'Custom Microphone';
 
                 this.selectedInputId = deviceId;
                 this.lastKnownInputLabel = selectedLabel;
@@ -553,7 +553,7 @@ class MamboApp {
             },
 
             onOutputDeviceChange: async (deviceId) => {
-                const selectedLabel = this.view.getSelectedDeviceLabel('output');
+                const selectedLabel = this.ui.audioOutputSelect?.selectedOptions[0]?.textContent || 'Custom Output';
 
                 this.selectedOutputId = deviceId;
                 this.lastKnownOutputLabel = selectedLabel;
@@ -744,7 +744,7 @@ class MamboApp {
         }
 
         if (this.ui.audioOutputSelect) {
-            const label = this.view.getSelectedDeviceLabel('output');
+            const label = this.ui.audioOutputSelect.selectedOptions[0]?.textContent || 'Custom Output';
             this.lastKnownOutputLabel = label;
             this._persistDevicePreference('output', this.selectedOutputId || 'default', label);
         }
@@ -781,11 +781,21 @@ class MamboApp {
     }
 
     _syncSelectValue(selectEl, deviceId, fallbackLabel) {
-        this.view.syncSelectValue(selectEl, deviceId, fallbackLabel);
+        if (!selectEl || !deviceId) return;
+        const options = [...selectEl.options];
+        if (!options.some(o => o.value === deviceId)) {
+            const option = document.createElement('option');
+            option.value = deviceId;
+            option.textContent = fallbackLabel || 'Active Device';
+            selectEl.appendChild(option);
+        }
+        selectEl.value = deviceId;
     }
 
     _findDeviceIdByLabel(selectEl, label) {
-        return this.view.findDeviceIdByLabel(selectEl, label);
+        if (!selectEl || !label) return null;
+        const option = [...selectEl.options].find(o => o.textContent === label);
+        return option ? option.value : null;
     }
 
     _updateDeviceHelperText() {
