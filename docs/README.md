@@ -6,8 +6,8 @@ Documentation for Mambo Whistle - Real-time neural vocal synthesis engine.
 
 | I want to... | See |
 |--------------|-----|
-| **Quick start for new sessions** | [sessions/QUICK_REFERENCE.md](sessions/QUICK_REFERENCE.md) |
 | **Understand design principles** | [../.claude.md](../.claude.md) (root) |
+| **See latest session work** | [sessions/SESSION_LATEST.md](sessions/SESSION_LATEST.md) |
 | **Configure audio system** | [guides/configuration.md](guides/configuration.md) |
 | **Troubleshoot issues** | [guides/troubleshooting.md](guides/troubleshooting.md) |
 | **Understand architecture** | [ARCHITECTURE_OVERVIEW.md](ARCHITECTURE_OVERVIEW.md) |
@@ -26,10 +26,8 @@ docs/
 │   └── troubleshooting.md         # Common issues and solutions
 ├── research/
 │   └── FUTURE_TECHNOLOGIES.md     # Neural audio & hardware roadmap
-└── sessions/                      # Session summaries
-    ├── QUICK_REFERENCE.md         # Quick start guide for new sessions
-    ├── REFACTOR_SUMMARY.md        # Architecture refactor decisions
-    └── SESSION_SUMMARY.md         # Device selection bug fixes
+└── sessions/
+    └── SESSION_LATEST.md          # Latest session summary (replaced each time)
 ```
 
 ## Document Descriptions
@@ -51,9 +49,7 @@ docs/
 
 ### Session Summaries
 
-- **sessions/QUICK_REFERENCE.md** - Quick start guide for new sessions
-- **sessions/REFACTOR_SUMMARY.md** - Architecture refactor decisions and lessons learned
-- **sessions/SESSION_SUMMARY.md** - Device selection bug fixes (2025-11-22)
+- **sessions/SESSION_LATEST.md** - Latest session work summary (replaced each session)
 
 ## Development Workflow
 
